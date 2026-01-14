@@ -1,242 +1,165 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LifeArchitect - Dark Mode</title>
+    <title>ChronoTrack - Gestión de Cronogramas</title>
     
-    <!-- 1. Cargamos React y ReactDOM desde Internet -->
+    <!-- Librerías Core -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- 2. Cargamos Babel para que el navegador entienda JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- 3. Cargamos Tailwind CSS para el diseño oscuro -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Configuración de Tailwind para colores personalizados -->
+    <!-- Configuración Tailwind (Dark Mode Class Strategy) -->
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        zinc: { 850: '#1f1f22', 950: '#09090b' }
+                        zinc: { 850: '#1f1f22', 900: '#18181b', 950: '#09090b' },
+                        primary: { 500: '#6366f1', 600: '#4f46e5' }
+                    },
+                    screens: {
+                        'print': {'raw': 'print'},
                     }
                 }
             }
         }
     </script>
-
     <style>
-        /* Estilos base para scrollbar oscura */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #09090b; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
-        body { background-color: #000; color: #e4e4e7; }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        .dark ::-webkit-scrollbar-track { background: #09090b; }
+        .dark ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        ::-webkit-scrollbar-track { background: #f4f4f5; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+
+        @media print {
+            @page { size: landscape; margin: 0.5cm; }
+            body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; }
+            .no-print, aside, button, .modal-overlay, .user-profile, select { display: none !important; }
+            .print-view-container { display: block !important; height: auto !important; overflow: visible !important; margin-bottom: 2cm !important; page-break-inside: avoid; }
+            .print-hidden { display: none !important; }
+            .bg-zinc-950, .bg-zinc-900, .bg-black, .dark .bg-zinc-950, .dark .bg-zinc-900, .dark .bg-black { background-color: white !important; border-color: #ddd !important; }
+            .text-zinc-200, .text-zinc-300, .text-zinc-400, .text-zinc-500, .text-white, .dark .text-white { color: black !important; }
+            .border-zinc-800, .dark .border-zinc-800 { border-color: #ccc !important; }
+            main { margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; }
+            .h-screen { height: auto !important; overflow: visible !important; }
+            .flex-1 { flex: none !important; overflow: visible !important; }
+            .overflow-x-auto, .overflow-y-auto { overflow: visible !important; }
+            .print-title { display: block !important; font-size: 18px; font-weight: bold; margin-bottom: 10px; margin-top: 20px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+            .bg-indigo-500 { background-color: #4f46e5 !important; border: 1px solid #312e81 !important; color: white !important; }
+            .bg-emerald-500 { background-color: #10b981 !important; border: 1px solid #065f46 !important; color: white !important; }
+            .bg-red-500 { background-color: #ef4444 !important; border: 1px solid #991b1b !important; color: white !important; }
+            .bg-zinc-500 { background-color: #71717a !important; border: 1px solid #3f3f46 !important; color: white !important; }
+            .print-only { display: block !important; }
+        }
+        .print-only { display: none; }
+        .print-title { display: none; }
     </style>
 </head>
-<body>
+<body class="bg-zinc-50 text-zinc-900 dark:bg-black dark:text-e4e4e7">
     <div id="root"></div>
 
-    <!-- AQUÍ COMIENZA EL CÓDIGO REACT -->
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // --- ICONOS SVG (Incrustados para no depender de librerías) ---
         const Icons = {
-            Layout: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>,
-            TrendingUp: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-            ListTodo: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>,
-            Target: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-            Timer: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>,
-            BookOpen: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
-            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
-            CheckCircle2: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>,
-            Circle: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>,
-            Flame: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.243-2.143.5-3z"/></svg>,
-            Activity: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
-            Play: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
-            Pause: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></svg>,
-            RotateCcw: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
-            Trophy: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2h-6c-2 0-3 1-3 3v5.33c0 2.18 1.6 4.02 3.73 4.48a4 4 0 0 0 4.54 0c2.13-.46 3.73-2.3 3.73-4.48V5c0-2-1-3-3-3z"/></svg>,
-            ShieldAlert: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>,
-            Smile: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
+            Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
+            Calendar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
+            Trash: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>,
+            Pencil: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>,
+            Check: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>,
+            Clock: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
+            Alert: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>,
+            Folder: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>,
+            ChevronRight: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>,
+            Printer: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>,
+            Home: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>,
+            Chart: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>,
+            Settings: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>,
+            User: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>,
+            LogOut: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>,
+            Box: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>,
+            Flag: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-8a2 2 0 012-2h14a2 2 0 012 2v8M3 21h18M5 10a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z"/></svg>,
+            Eye: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>,
+            Sun: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
+            Moon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
         };
 
-        // --- UTILIDADES ---
-        const getTodayStr = () => new Date().toISOString().split('T')[0];
         const generateId = () => Math.random().toString(36).substr(2, 9);
-        const getDaysDiff = (dateStr) => {
-            if(!dateStr) return 0;
-            const start = new Date(dateStr);
-            const now = new Date();
-            const diffTime = Math.abs(now - start);
-            return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        };
+        const getDaysDiff = (start, end) => Math.round(Math.abs((new Date(end) - new Date(start)) / (24 * 60 * 60 * 1000)));
 
-        // --- GESTOR DE DATOS (LOCALSTORAGE) ---
-        const useData = (key, initialValue) => {
-            const [data, setData] = useState(() => {
-                const saved = localStorage.getItem(`lifearchitect_${key}`);
-                return saved ? JSON.parse(saved) : initialValue;
+        const GanttChart = ({ tasks, onDelete, onEdit }) => {
+            const scheduledTasks = tasks.filter(t => t.start && t.end);
+
+            if (scheduledTasks.length === 0) return (
+                <div className="flex flex-col items-center justify-center h-64 text-zinc-500 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900/50 border-dashed">
+                    <Icons.Calendar />
+                    <p className="mt-2 text-center px-4">No hay tareas programadas con fechas para mostrar en el cronograma.</p>
+                </div>
+            );
+
+            const dates = scheduledTasks.flatMap(t => [new Date(t.start), new Date(t.end)]);
+            const minDate = new Date(Math.min(...dates)); minDate.setDate(minDate.getDate() - 2);
+            const maxDate = new Date(Math.max(...dates)); maxDate.setDate(maxDate.getDate() + 5);
+            const totalDays = getDaysDiff(minDate, maxDate) + 1;
+            const timelineDays = Array.from({length: totalDays}, (_, i) => {
+                const d = new Date(minDate); d.setDate(d.getDate() + i); return d;
             });
 
-            useEffect(() => {
-                localStorage.setItem(`lifearchitect_${key}`, JSON.stringify(data));
-            }, [data, key]);
-
-            return [data, setData];
-        };
-
-        // --- COMPONENTE PRINCIPAL ---
-        function LifeArchitect() {
-            // Estados persistentes
-            const [habits, setHabits] = useData('habits', []);
-            const [tasks, setTasks] = useData('tasks', []);
-            const [goals, setGoals] = useData('goals', []);
-            const [moods, setMoods] = useData('moods', []);
-            const [stats, setStats] = useData('stats', { xp: 0, level: 1 });
-            
-            // Estado de UI
-            const [activeTab, setActiveTab] = useState('dashboard');
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const [modalType, setModalType] = useState(null);
-            const [newItemData, setNewItemData] = useState({});
-            
-            // Focus Mode
-            const [focusTime, setFocusTime] = useState(25 * 60);
-            const [isFocusActive, setIsFocusActive] = useState(false);
-            const focusInterval = useRef(null);
-
-            // --- LÓGICA DE NEGOCIO ---
-            const addXP = (amount) => {
-                setStats(prev => {
-                    const newXP = prev.xp + amount;
-                    const newLevel = Math.floor(newXP / 100) + 1;
-                    if(newLevel > prev.level) alert(`¡Nivel Subido! Ahora eres nivel ${newLevel}`);
-                    return { xp: newXP, level: newLevel };
-                });
+            const getPosition = (dateStr) => (getDaysDiff(minDate, new Date(dateStr)) / totalDays) * 100;
+            const getWidth = (startStr, endStr) => ((getDaysDiff(new Date(startStr), new Date(endStr)) + 1) / totalDays) * 100;
+            const getStatusColor = (status, endStr) => {
+                const today = new Date().toISOString().split('T')[0];
+                if (status === 'Completado') return 'bg-emerald-500';
+                if (endStr < today && status !== 'Completado') return 'bg-red-500';
+                if (status === 'En Progreso') return 'bg-indigo-500';
+                return 'bg-zinc-500';
             };
 
-            const handleCreate = (e) => {
-                e.preventDefault();
-                const id = generateId();
-                const now = new Date().toISOString();
-
-                if (modalType === 'habit') {
-                    const isBad = newItemData.type === 'bad';
-                    setHabits([...habits, {
-                        id,
-                        title: newItemData.title,
-                        type: newItemData.type || 'good',
-                        category: isBad ? 'bad' : 'general',
-                        completedDates: [],
-                        lastRelapse: isBad ? now : null,
-                        streak: 0,
-                        createdAt: now
-                    }]);
-                } else if (modalType === 'task') {
-                    setTasks([...tasks, { id, title: newItemData.title, completed: false, createdAt: now }]);
-                } else if (modalType === 'goal') {
-                    setGoals([...goals, { id, title: newItemData.title, progress: 0, createdAt: now }]);
-                } else if (modalType === 'mood') {
-                    setMoods([...moods, { id, rating: newItemData.rating || 3, note: newItemData.note, createdAt: now }]);
-                    addXP(5);
-                }
-                setIsModalOpen(false);
-                setNewItemData({});
-            };
-
-            const toggleHabit = (id) => {
-                const today = getTodayStr();
-                setHabits(habits.map(h => {
-                    if (h.id !== id) return h;
-                    
-                    if (h.type === 'bad') {
-                        if(!confirm("¿Registrar recaída?")) return h;
-                        return { ...h, lastRelapse: new Date().toISOString(), streak: 0 };
-                    } else {
-                        const isDone = h.completedDates.includes(today);
-                        let newDates = isDone ? h.completedDates.filter(d => d !== today) : [...h.completedDates, today];
-                        let newStreak = isDone ? Math.max(0, h.streak - 1) : h.streak + 1;
-                        if(!isDone) addXP(10);
-                        return { ...h, completedDates: newDates, streak: newStreak };
-                    }
-                }));
-            };
-
-            const toggleTask = (id) => {
-                setTasks(tasks.map(t => {
-                    if (t.id !== id) return t;
-                    const newStatus = !t.completed;
-                    if(newStatus) addXP(20);
-                    return { ...t, completed: newStatus };
-                }));
-            };
-
-            const deleteItem = (type, id) => {
-                if(!confirm("¿Borrar?")) return;
-                if(type === 'habits') setHabits(habits.filter(h => h.id !== id));
-                if(type === 'tasks') setTasks(tasks.filter(t => t.id !== id));
-                if(type === 'goals') setGoals(goals.filter(g => g.id !== id));
-            };
-
-            // Focus Timer Effect
-            useEffect(() => {
-                if (isFocusActive && focusTime > 0) {
-                    focusInterval.current = setInterval(() => setFocusTime(t => t - 1), 1000);
-                } else if (focusTime === 0 && isFocusActive) {
-                    setIsFocusActive(false);
-                    clearInterval(focusInterval.current);
-                    alert("¡Tiempo terminado!");
-                    addXP(50);
-                }
-                return () => clearInterval(focusInterval.current);
-            }, [isFocusActive, focusTime]);
-
-            const formatTime = (seconds) => {
-                const m = Math.floor(seconds / 60);
-                const s = seconds % 60;
-                return `${m}:${s < 10 ? '0' : ''}${s}`;
-            };
-
-            // --- VISTAS ---
-            const renderDashboard = () => (
-                <div className="space-y-6 animate-fade-in">
-                    <div className="bg-gradient-to-br from-indigo-900 to-purple-900 p-6 rounded-2xl text-white border border-white/10 shadow-xl">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl font-bold">Nivel {stats.level}</h2>
-                                <p className="text-indigo-200 flex items-center gap-2 mt-1"><Icons.Trophy /> {stats.xp} XP</p>
-                            </div>
+            return (
+                <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dark:shadow-xl print-container">
+                    <div className="print-title text-zinc-900">Cronograma de Actividades (Gantt)</div>
+                    <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-x-auto hide-scrollbar">
+                        <div className="w-48 flex-shrink-0 p-3 text-sm font-bold text-zinc-500 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 sticky left-0 bg-zinc-50 dark:bg-zinc-950 z-10 print-header">Tarea</div>
+                        <div className="flex-1 relative h-10 min-w-[600px]">
+                            {timelineDays.map((day, i) => (
+                                <div key={i} className="absolute border-l border-zinc-200 dark:border-zinc-800 h-full flex items-center justify-center text-[10px] text-zinc-500 dark:text-zinc-600" 
+                                     style={{left: `${(i/totalDays)*100}%`, width: `${(1/totalDays)*100}%`}}>{day.getDate()}</div>
+                            ))}
                         </div>
-                        <div className="mt-4 bg-black/30 h-3 rounded-full overflow-hidden">
-                            <div className="bg-yellow-400 h-full transition-all duration-1000" style={{width: `${stats.xp % 100}%`}}></div>
-                        </div>
-                        <p className="text-xs text-right mt-1 text-indigo-300">Próximo nivel en {100 - (stats.xp % 100)} XP</p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {habits.slice(0, 4).map(habit => {
-                            const isBad = habit.type === 'bad';
-                            const today = getTodayStr();
-                            const isDone = !isBad && habit.completedDates.includes(today);
-                            
+                    <div className="overflow-y-auto overflow-x-auto custom-scrollbar flex-1 relative bg-white dark:bg-zinc-900/50">
+                        {scheduledTasks.map((task, index) => {
+                            const left = getPosition(task.start);
+                            const width = getWidth(task.start, task.end);
+                            const color = getStatusColor(task.status, task.end);
+                            const isLate = task.status !== 'Completado' && task.end < new Date().toISOString().split('T')[0];
                             return (
-                                <div key={habit.id} className={`p-4 rounded-xl border flex justify-between items-center ${isBad ? 'bg-red-900/10 border-red-900/30' : 'bg-zinc-900 border-zinc-800'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={() => toggleHabit(habit.id)} className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${isDone ? 'bg-emerald-600 text-white' : isBad ? 'bg-red-900/20 text-red-500 border border-red-900' : 'bg-zinc-800 text-zinc-500'}`}>
-                                            {isBad ? <Icons.ShieldAlert /> : (isDone ? <Icons.CheckCircle2 /> : <Icons.Circle />)}
-                                        </button>
-                                        <div>
-                                            <p className="font-semibold">{habit.title}</p>
-                                            <p className="text-xs text-zinc-500">
-                                                {isBad ? `${getDaysDiff(habit.lastRelapse)} días limpio` : `Racha: ${habit.streak}`}
-                                            </p>
+                                <div key={task.id} className="flex border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors group">
+                                    <div className="w-48 flex-shrink-0 p-3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 sticky left-0 z-10 flex justify-between items-center group print-task-label">
+                                        <div className="truncate pr-2 w-full flex items-center gap-2">
+                                            <span className="text-xs font-mono text-zinc-400">#{index + 1}</span>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium truncate" title={task.name}>{task.name}</div>
+                                                <div className="text-xs text-zinc-500 flex items-center gap-1 no-print">{isLate && <Icons.Alert />} {task.start}</div>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                                            <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-indigo-500 dark:text-zinc-600 dark:hover:text-indigo-400"><Icons.Pencil /></button>
+                                            <button onClick={() => onDelete(task.id)} className="text-zinc-400 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-500"><Icons.Trash /></button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 relative h-14 min-w-[600px]">
+                                        {timelineDays.map((_, i) => <div key={i} className="absolute border-l border-zinc-100 dark:border-zinc-800/30 h-full" style={{left: `${(i/totalDays)*100}%`}}></div>)}
+                                        <div className={`absolute top-3 h-8 rounded-md shadow-sm ${color} bg-opacity-90 flex items-center px-2 overflow-hidden whitespace-nowrap transition-all hover:brightness-110 cursor-pointer print-bar`}
+                                            style={{ left: `${left}%`, width: `${width}%` }} title={`Entregable: ${task.deliverable || 'N/A'}`} onClick={() => onEdit(task)}>
+                                            <span className="text-xs font-bold text-white drop-shadow-md">{task.progress}%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -245,163 +168,393 @@
                     </div>
                 </div>
             );
+        };
 
-            // --- NAVEGACIÓN ---
-            const NavButton = ({ id, label, icon: Icon }) => (
-                <button onClick={() => setActiveTab(id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === id ? 'bg-white/10 text-indigo-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                    <Icon /> {label}
+        const TaskListView = ({ tasks, onDelete, onEdit, onStatusChange }) => {
+            return (
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dark:shadow-xl flex flex-col print-container animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="print-title text-zinc-900">Detalle de Actividades</div>
+                    <div className="grid grid-cols-12 gap-4 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-bold text-zinc-500 dark:text-zinc-400 text-sm print-header uppercase tracking-wider">
+                        <div className="col-span-1">#</div>
+                        <div className="col-span-2">Actividad</div>
+                        <div className="col-span-2">Descripción</div>
+                        <div className="col-span-1">Entregable</div>
+                        <div className="col-span-2">Observaciones</div>
+                        <div className="col-span-2">Fechas</div>
+                        <div className="col-span-1">Estado</div>
+                        <div className="col-span-1 text-right no-print">Acción</div>
+                    </div>
+                    <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                        {tasks.map((task, index) => (
+                            <div key={task.id} className="grid grid-cols-12 gap-4 p-4 items-start hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors text-sm text-zinc-600 dark:text-zinc-300 group">
+                                <div className="col-span-1 font-bold text-zinc-400 dark:text-zinc-500">{index + 1}</div>
+                                <div className="col-span-2 font-medium text-zinc-900 dark:text-white break-words">{task.name}</div>
+                                <div className="col-span-2 text-zinc-500 dark:text-zinc-400 text-xs break-words whitespace-pre-wrap">{task.description || '-'}</div>
+                                <div className="col-span-1">
+                                    {task.deliverable ? (
+                                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-indigo-600 dark:text-indigo-300 text-xs font-medium break-words">
+                                            <Icons.Box /> {task.deliverable}
+                                        </span>
+                                    ) : <span className="text-zinc-400">-</span>}
+                                </div>
+                                <div className="col-span-2 text-zinc-500 dark:text-zinc-400 text-xs break-words whitespace-pre-wrap italic">
+                                    {task.observations ? <span className="flex gap-1"><Icons.Eye /> {task.observations}</span> : <span className="text-zinc-400">-</span>}
+                                </div>
+                                <div className="col-span-2 flex flex-col text-xs">
+                                    <span className="text-zinc-500">In: {task.start || '--'}</span>
+                                    <span className="text-zinc-500">Fn: {task.end || '--'}</span>
+                                </div>
+                                <div className="col-span-1">
+                                    <select value={task.status} onChange={(e) => onStatusChange(task.id, e.target.value)}
+                                        className={`w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded px-2 py-1 text-xs outline-none focus:border-indigo-500 no-print 
+                                            ${task.status === 'Completado' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : task.status === 'En Progreso' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="En Progreso">En Progreso</option>
+                                        <option value="Retrasado">Retrasado</option>
+                                        <option value="Completado">Completado</option>
+                                    </select>
+                                    <span className="hidden print-only text-black text-xs">{task.status}</span>
+                                </div>
+                                <div className="col-span-1 text-right no-print opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-1">
+                                    <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-indigo-500 dark:text-zinc-600 dark:hover:text-indigo-400 transition-colors p-1 rounded"><Icons.Pencil /></button>
+                                    <button onClick={() => onDelete(task.id)} className="text-zinc-400 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-500 transition-colors p-1 rounded"><Icons.Trash /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Dashboard = ({ projects, tasks }) => {
+            const totalProjects = projects.length;
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.status === 'Completado').length;
+            const delayedTasks = tasks.filter(t => t.status !== 'Completado' && t.end && t.end < new Date().toISOString().split('T')[0]).length;
+            const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+            const StatCard = ({ title, value, sub, icon: Icon, color }) => (
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-xl flex items-start justify-between shadow-sm dark:shadow-lg">
+                    <div>
+                        <p className="text-zinc-500 text-sm font-medium mb-1">{title}</p>
+                        <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">{value}</h3>
+                        <p className={`text-xs ${sub.includes('+') ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>{sub}</p>
+                    </div>
+                    <div className={`p-3 rounded-lg ${color} bg-opacity-10 text-white dark:text-white`}>
+                        <Icon />
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="p-6 space-y-8 animate-in fade-in zoom-in duration-300">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">Bienvenido, Arquitecto</h1>
+                        <p className="text-zinc-500 dark:text-zinc-400">Aquí tienes el resumen de tus operaciones hoy.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard title="Proyectos Activos" value={totalProjects} sub="En curso" icon={Icons.Folder} color="bg-indigo-600" />
+                        <StatCard title="Tareas Totales" value={totalTasks} sub="Registradas" icon={Icons.Check} color="bg-blue-600" />
+                        <StatCard title="Eficiencia" value={`${completionRate}%`} sub="Tasa de éxito" icon={Icons.Chart} color="bg-emerald-600" />
+                        <StatCard title="Retrasos" value={delayedTasks} sub="Atención requerida" icon={Icons.Alert} color="bg-red-600" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6">
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-4">Actividad Reciente</h3>
+                            <div className="space-y-4">
+                                {tasks.slice(-5).reverse().map(t => (
+                                    <div key={t.id} className="flex items-center justify-between pb-4 border-b border-zinc-100 dark:border-zinc-800/50 last:border-0 last:pb-0">
+                                        <div>
+                                            <p className="text-zinc-700 dark:text-zinc-300 font-medium">{t.name}</p>
+                                            <p className="text-xs text-zinc-500">Estado: {t.status}</p>
+                                        </div>
+                                        <span className="text-xs text-zinc-500 dark:text-zinc-600">{t.start || '-'}</span>
+                                    </div>
+                                ))}
+                                {tasks.length === 0 && <p className="text-zinc-500 text-sm">No hay actividad registrada.</p>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ReportsView = ({ projects, tasks }) => {
+            const byStatus = {
+                'Completado': tasks.filter(t => t.status === 'Completado').length,
+                'En Progreso': tasks.filter(t => t.status === 'En Progreso').length,
+                'Pendiente': tasks.filter(t => t.status === 'Pendiente').length,
+                'Retrasado': tasks.filter(t => t.status === 'Retrasado' || (t.status !== 'Completado' && t.end && t.end < new Date().toISOString().split('T')[0])).length
+            };
+            const projectStats = projects.map(p => {
+                const pTasks = tasks.filter(t => t.projectId === p.id);
+                const total = pTasks.length;
+                const done = pTasks.filter(t => t.status === 'Completado').length;
+                return { name: p.name, total, done, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
+            });
+            const upcoming = tasks.filter(t => t.status !== 'Completado' && t.end && t.end >= new Date().toISOString().split('T')[0] && t.end <= new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]).sort((a, b) => a.end.localeCompare(b.end));
+
+            const StatusCard = ({ label, count, color }) => (
+                <div className={`p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex items-center justify-between`}>
+                    <div>
+                        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wider">{label}</p>
+                        <p className="text-2xl font-bold text-zinc-900 dark:text-white mt-1">{count}</p>
+                    </div>
+                    <div className={`w-3 h-3 rounded-full ${color}`}></div>
+                </div>
+            );
+
+            return (
+                <div className="p-8 space-y-8 animate-in fade-in duration-300">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-zinc-900 dark:text-white flex items-center gap-2"><Icons.Chart /> Reportes y Métricas</h2>
+                        <button onClick={() => window.print()} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white flex items-center gap-2 text-sm bg-zinc-200 dark:bg-zinc-800 px-3 py-2 rounded-lg transition-colors no-print">
+                            <Icons.Printer className="w-4 h-4" /> Imprimir Reporte
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 print-grid">
+                        <StatusCard label="Completadas" count={byStatus['Completado']} color="bg-emerald-500" />
+                        <StatusCard label="En Progreso" count={byStatus['En Progreso']} color="bg-indigo-500" />
+                        <StatusCard label="Pendientes" count={byStatus['Pendiente']} color="bg-zinc-500" />
+                        <StatusCard label="Retrasadas" count={byStatus['Retrasado']} color="bg-red-500" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print-grid">
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-lg">
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2"><Icons.Folder className="w-5 h-5 text-zinc-500"/> Progreso por Proyecto</h3>
+                            <div className="space-y-6">
+                                {projectStats.map(p => (
+                                    <div key={p.name}>
+                                        <div className="flex justify-between text-sm mb-2">
+                                            <span className="text-zinc-700 dark:text-zinc-300 font-medium">{p.name}</span>
+                                            <span className="text-zinc-500">{p.percent}% ({p.done}/{p.total})</span>
+                                        </div>
+                                        <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                            <div className="h-full bg-indigo-600 transition-all duration-1000" style={{width: `${p.percent}%`}}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {projectStats.length === 0 && <p className="text-zinc-500 italic text-sm">No hay proyectos activos.</p>}
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm dark:shadow-lg">
+                            <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-6 flex items-center gap-2"><Icons.Flag className="w-5 h-5 text-red-500"/> Próximas Entregas (7 días)</h3>
+                            {upcoming.length > 0 ? (
+                                <div className="space-y-3">
+                                    {upcoming.map(t => (
+                                        <div key={t.id} className="flex justify-between items-start p-3 bg-zinc-50 dark:bg-zinc-950/50 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors">
+                                            <div>
+                                                <div className="text-sm font-medium text-zinc-900 dark:text-white">{t.name}</div>
+                                                <div className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1"><Icons.Box className="w-3 h-3" /> {t.deliverable || 'Sin entregable'}</div>
+                                            </div>
+                                            <div className="text-xs font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded border border-indigo-100 dark:border-indigo-500/20">{t.end}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="h-32 flex flex-col items-center justify-center text-zinc-500 border border-dashed border-zinc-300 dark:border-zinc-800 rounded-lg">
+                                    <Icons.Check className="w-6 h-6 mb-2 opacity-50" />
+                                    <p className="text-sm">Todo al día.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTE PRINCIPAL ---
+        function App() {
+            // Estado Theme
+            const [theme, setTheme] = useState(() => localStorage.getItem('chronotrack_theme') || 'dark');
+            
+            // Estado Datos
+            const [projects, setProjects] = useState(() => {
+                const saved = localStorage.getItem('chronotrack_projects');
+                return saved ? JSON.parse(saved) : [{ id: '1', name: 'Proyecto Demo', createdAt: new Date().toISOString() }];
+            });
+            const [tasks, setTasks] = useState(() => {
+                const saved = localStorage.getItem('chronotrack_tasks');
+                return saved ? JSON.parse(saved) : [];
+            });
+
+            // Estado UI
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [newTask, setNewTask] = useState({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 });
+            const [editingId, setEditingId] = useState(null);
+            const [viewMode, setViewMode] = useState('list'); 
+
+            // Efectos
+            useEffect(() => {
+                const root = window.document.documentElement;
+                if (theme === 'dark') root.classList.add('dark');
+                else root.classList.remove('dark');
+                localStorage.setItem('chronotrack_theme', theme);
+            }, [theme]);
+
+            useEffect(() => localStorage.setItem('chronotrack_projects', JSON.stringify(projects)), [projects]);
+            useEffect(() => localStorage.setItem('chronotrack_tasks', JSON.stringify(tasks)), [tasks]);
+
+            const activeProjectId = (currentView === 'dashboard' || currentView === 'reports') ? null : currentView;
+            const activeTasks = useMemo(() => {
+                const filtered = tasks.filter(t => t.projectId === activeProjectId);
+                return filtered.sort((a, b) => {
+                    if (!a.start) return 1; 
+                    if (!b.start) return -1;
+                    return new Date(a.start) - new Date(b.start);
+                });
+            }, [tasks, activeProjectId]);
+
+            const activeProject = projects.find(p => p.id === activeProjectId);
+
+            const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+
+            const handlePrint = () => {
+                window.print();
+            };
+
+            // Handlers (Simplificados para brevedad, misma lógica)
+            const handleAddProject = () => { const n = prompt("Nombre:"); if(n) { const id=generateId(); setProjects([...projects, {id, name:n, createdAt:new Date().toISOString()}]); setCurrentView(id); } };
+            const handleDeleteProject = () => { if(confirm("¿Borrar?")) { setProjects(projects.filter(p=>p.id!==activeProjectId)); setTasks(tasks.filter(t=>t.projectId!==activeProjectId)); setCurrentView('dashboard'); } };
+            const handleSaveTask = (e) => { e.preventDefault(); if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); if(editingId) setTasks(tasks.map(t=>t.id===editingId?{...t,...newTask}:t)); else setTasks([...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]); setIsModalOpen(false); setEditingId(null); setNewTask({name:'', description:'', deliverable:'', observations:'', start:'', end:'', status:'Pendiente', progress:0}); };
+            const handleEditTask = (t) => { setNewTask({...t}); setEditingId(t.id); setIsModalOpen(true); };
+            const handleDeleteTask = (id) => setTasks(tasks.filter(t=>t.id!==id));
+            const updateTaskStatus = (id, s) => setTasks(tasks.map(t=>t.id===id?{...t, status:s, progress: s==='Completado'?100:t.progress}:t));
+
+            const SidebarItem = ({ label, icon: Icon, active, onClick, badge }) => (
+                <button onClick={onClick} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${active ? 'bg-indigo-50 dark:bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent'}`}>
+                    <div className="flex items-center gap-3"><Icon className={`w-5 h-5 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-300'}`} /><span>{label}</span></div>
+                    {badge && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] px-1.5 py-0.5 rounded-md">{badge}</span>}
                 </button>
             );
 
             return (
-                <div className="flex h-screen overflow-hidden">
-                    {/* Sidebar */}
-                    <aside className="hidden md:flex flex-col w-64 bg-zinc-950 border-r border-zinc-800 p-4">
-                        <div className="flex items-center gap-2 text-indigo-500 px-4 py-4 mb-4">
-                            <Icons.Activity />
-                            <span className="font-bold text-xl text-white">LifeArchitect</span>
+                <div className="flex h-screen overflow-hidden font-sans bg-zinc-50 dark:bg-black transition-colors duration-300">
+                    {/* SIDEBAR */}
+                    <aside className="w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col no-print shadow-sm dark:shadow-xl z-20 transition-colors">
+                        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
+                            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
+                            <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">ChronoTrack</h1>
                         </div>
-                        <nav className="space-y-1">
-                            <NavButton id="dashboard" label="Resumen" icon={Icons.Layout} />
-                            <NavButton id="habits" label="Hábitos" icon={Icons.TrendingUp} />
-                            <NavButton id="focus" label="Enfoque" icon={Icons.Timer} />
-                            <NavButton id="planner" label="Agenda" icon={Icons.ListTodo} />
-                            <NavButton id="journal" label="Diario" icon={Icons.BookOpen} />
-                        </nav>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                            <div className="space-y-1">
+                                <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Menu Principal</p>
+                                <SidebarItem label="Inicio" icon={Icons.Home} active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
+                                <SidebarItem label="Calendario Global" icon={Icons.Calendar} onClick={() => alert("Próximamente")} />
+                                <SidebarItem label="Reportes" icon={Icons.Chart} active={currentView === 'reports'} onClick={() => setCurrentView('reports')} />
+                            </div>
+                            <div className="space-y-1">
+                                <div className="flex items-center justify-between px-3 mb-2">
+                                    <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">Espacios de Trabajo</p>
+                                    <button onClick={handleAddProject} className="text-zinc-400 hover:text-indigo-500 transition-colors" title="Crear Proyecto"><Icons.Plus /></button>
+                                </div>
+                                {projects.map(p => <SidebarItem key={p.id} label={p.name} icon={Icons.Folder} active={currentView === p.id} onClick={() => setCurrentView(p.id)} badge={tasks.filter(t => t.projectId === p.id && t.status !== 'Completado').length || null} />)}
+                                {projects.length === 0 && <p className="px-3 text-xs text-zinc-400 italic">Sin proyectos</p>}
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 user-profile">
+                            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer group">
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-md">AD</div>
+                                <div className="flex-1 overflow-hidden">
+                                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200 truncate">Admin User</p>
+                                    <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">Pro Plan</p>
+                                </div>
+                                <Icons.Settings className="w-4 h-4 text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-600 dark:group-hover:text-zinc-300" />
+                            </div>
+                        </div>
                     </aside>
 
-                    {/* Main Content */}
-                    <main className="flex-1 flex flex-col h-full bg-black text-zinc-200 relative">
-                        <div className="flex-1 overflow-y-auto p-4 md:p-8 max-w-4xl mx-auto w-full">
-                            {/* Mobile Header */}
-                            <div className="md:hidden flex justify-between items-center mb-6">
-                                <span className="font-bold text-indigo-500 flex gap-2"><Icons.Activity /> LifeArchitect</span>
+                    {/* MAIN */}
+                    <main className="flex-1 flex flex-col min-w-0 relative bg-zinc-50 dark:bg-black transition-colors">
+                        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-8 bg-white/80 dark:bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 transition-colors">
+                            <div>
+                                <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">{currentView === 'dashboard' ? 'Panel de Control' : (currentView === 'reports' ? 'Centro de Reportes' : activeProject?.name)}</h2>
+                                <p className="text-xs text-zinc-500 no-print">{currentView === 'dashboard' ? `Resumen de ${projects.length} proyectos` : (currentView === 'reports' ? 'Análisis de rendimiento' : `Gestión de proyecto • ${activeTasks.length} tareas`)}</p>
                             </div>
-
-                            {activeTab === 'dashboard' && renderDashboard()}
-
-                            {activeTab === 'habits' && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h2 className="text-2xl font-bold">Hábitos</h2>
-                                        <button onClick={() => { setModalType('habit'); setIsModalOpen(true); }} className="bg-indigo-600 px-4 py-2 rounded-lg text-white text-sm hover:bg-indigo-500 flex items-center gap-2"><Icons.Plus /> Nuevo</button>
-                                    </div>
-                                    <div className="grid gap-3">
-                                        {habits.map(h => (
-                                            <div key={h.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex justify-between items-center">
-                                                <div className="flex items-center gap-3">
-                                                     <button onClick={() => toggleHabit(h.id)} className={`p-2 rounded-lg ${h.type === 'bad' ? 'text-red-500' : (h.completedDates.includes(getTodayStr()) ? 'text-emerald-500' : 'text-zinc-600')}`}>
-                                                        {h.type === 'bad' ? <Icons.ShieldAlert /> : <Icons.CheckCircle2 />}
-                                                     </button>
-                                                     <span>{h.title}</span>
-                                                </div>
-                                                <button onClick={() => deleteItem('habits', h.id)} className="text-zinc-600 hover:text-red-500"><Icons.Trash2 /></button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            
-                             {activeTab === 'planner' && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h2 className="text-2xl font-bold">Agenda</h2>
-                                        <button onClick={() => { setModalType('task'); setIsModalOpen(true); }} className="bg-indigo-600 px-4 py-2 rounded-lg text-white text-sm hover:bg-indigo-500 flex items-center gap-2"><Icons.Plus /> Nueva Tarea</button>
-                                    </div>
-                                    {tasks.filter(t => !t.completed).map(t => (
-                                        <div key={t.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl flex justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <button onClick={() => toggleTask(t.id)} className="text-zinc-600 hover:text-indigo-500"><Icons.Circle /></button>
-                                                <span>{t.title}</span>
-                                            </div>
-                                            <button onClick={() => deleteItem('tasks', t.id)}><Icons.Trash2 className="text-zinc-600 hover:text-red-500" /></button>
+                            <div className="flex items-center gap-3 no-print">
+                                <button onClick={toggleTheme} className="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors" title={theme==='dark'?'Modo Claro':'Modo Oscuro'}>
+                                    {theme === 'dark' ? <Icons.Sun /> : <Icons.Moon />}
+                                </button>
+                                {currentView !== 'dashboard' && currentView !== 'reports' && activeProject && (
+                                    <>
+                                        <button onClick={handlePrint} className="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors" title="Imprimir"><Icons.Printer /></button>
+                                        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
+                                        <div className="flex bg-zinc-100 dark:bg-zinc-900 rounded-lg p-1 border border-zinc-200 dark:border-zinc-800">
+                                            <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Lista</button>
+                                            <button onClick={() => setViewMode('gantt')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'gantt' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Cronograma</button>
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        <button onClick={() => { setNewTask({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 }); setEditingId(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-500 flex items-center gap-2 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95"><Icons.Plus /> Nueva Tarea</button>
+                                        <button onClick={handleDeleteProject} className="p-2 text-zinc-400 hover:text-red-500 transition-colors" title="Borrar Proyecto"><Icons.Trash /></button>
+                                    </>
+                                )}
+                            </div>
+                        </header>
 
-                            {activeTab === 'focus' && (
-                                <div className="flex flex-col items-center justify-center h-full space-y-8">
-                                    <div className={`w-64 h-64 rounded-full border-8 flex items-center justify-center text-5xl font-bold font-mono transition-all ${isFocusActive ? 'border-indigo-500 text-indigo-400 shadow-[0_0_50px_rgba(99,102,241,0.3)]' : 'border-zinc-800 text-zinc-600'}`}>
-                                        {formatTime(focusTime)}
+                        <div className="flex-1 overflow-auto bg-zinc-50 dark:bg-black scroll-smooth p-6 transition-colors">
+                            {currentView === 'dashboard' ? (
+                                <Dashboard projects={projects} tasks={tasks} />
+                            ) : currentView === 'reports' ? (
+                                <ReportsView projects={projects} tasks={tasks} />
+                            ) : (
+                                <div className="h-full min-h-[500px]">
+                                    <div className={`print-view-container ${viewMode === 'gantt' ? 'block' : 'hidden'} h-full print:block`}>
+                                        <GanttChart tasks={activeTasks} onDelete={handleDeleteTask} onEdit={handleEditTask} />
                                     </div>
-                                    <div className="flex gap-4">
-                                        <button onClick={() => setIsFocusActive(!isFocusActive)} className="px-8 py-3 bg-indigo-600 rounded-xl text-white font-bold hover:bg-indigo-500">
-                                            {isFocusActive ? 'Pausar' : 'Iniciar'}
-                                        </button>
-                                        <button onClick={() => { setIsFocusActive(false); setFocusTime(25*60); }} className="px-4 py-3 bg-zinc-800 rounded-xl text-zinc-400 hover:bg-zinc-700">
-                                            Reiniciar
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                             {activeTab === 'journal' && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <h2 className="text-2xl font-bold">Diario</h2>
-                                        <button onClick={() => { setModalType('mood'); setIsModalOpen(true); }} className="bg-indigo-600 px-4 py-2 rounded-lg text-white text-sm"><Icons.Plus /></button>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {moods.map(m => (
-                                            <div key={m.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-                                                <div className="flex justify-between mb-2">
-                                                    <span className="text-2xl">{{1: '😡', 2: '😐', 3: '🙂', 4: '😃', 5: '🤩'}[m.rating]}</span>
-                                                    <span className="text-xs text-zinc-500">{new Date(m.createdAt).toLocaleDateString()}</span>
-                                                </div>
-                                                <p className="text-sm text-zinc-400 italic">"{m.note}"</p>
-                                            </div>
-                                        ))}
+                                    <div className="hidden print:block h-8"></div>
+                                    <div className={`print-view-container ${viewMode === 'list' ? 'block' : 'hidden'} print:block`}>
+                                        <TaskListView tasks={activeTasks} onDelete={handleDeleteTask} onEdit={handleEditTask} onStatusChange={updateTaskStatus} />
                                     </div>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Mobile Nav */}
-                        <div className="md:hidden border-t border-zinc-800 p-2 flex justify-around bg-zinc-950">
-                            <button onClick={() => setActiveTab('dashboard')} className={`p-2 rounded ${activeTab==='dashboard'?'text-indigo-400 bg-white/5':'text-zinc-500'}`}><Icons.Layout /></button>
-                            <button onClick={() => setActiveTab('habits')} className={`p-2 rounded ${activeTab==='habits'?'text-indigo-400 bg-white/5':'text-zinc-500'}`}><Icons.TrendingUp /></button>
-                            <button onClick={() => setActiveTab('focus')} className={`p-2 rounded ${activeTab==='focus'?'text-indigo-400 bg-white/5':'text-zinc-500'}`}><Icons.Timer /></button>
-                            <button onClick={() => setActiveTab('planner')} className={`p-2 rounded ${activeTab==='planner'?'text-indigo-400 bg-white/5':'text-zinc-500'}`}><Icons.ListTodo /></button>
                         </div>
                     </main>
 
                     {/* MODAL */}
                     {isModalOpen && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                            <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md p-6 rounded-2xl shadow-2xl">
-                                <h3 className="text-xl font-bold mb-4">Nuevo Elemento</h3>
-                                <form onSubmit={handleCreate} className="space-y-4">
-                                    {modalType === 'mood' ? (
-                                        <>
-                                            <div className="flex justify-between px-2 text-2xl">
-                                                {[1,2,3,4,5].map(r => (
-                                                    <button type="button" key={r} onClick={() => setNewItemData({...newItemData, rating: r})} className={`p-2 rounded-full ${newItemData.rating===r ? 'bg-white/10 scale-125' : ''}`}>
-                                                        {{1: '😡', 2: '😐', 3: '🙂', 4: '😃', 5: '🤩'}[r]}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                            <input className="w-full bg-black border border-zinc-700 p-3 rounded-lg text-white" placeholder="Nota..." onChange={e => setNewItemData({...newItemData, note: e.target.value})} />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <input autoFocus className="w-full bg-black border border-zinc-700 p-3 rounded-lg text-white focus:border-indigo-500 outline-none" placeholder="Título..." value={newItemData.title || ''} onChange={e => setNewItemData({...newItemData, title: e.target.value})} />
-                                            
-                                            {modalType === 'habit' && (
-                                                <div className="flex gap-4">
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-black p-3 rounded-lg border border-zinc-700 flex-1">
-                                                        <input type="radio" name="type" value="good" checked={!newItemData.type || newItemData.type === 'good'} onChange={() => setNewItemData({...newItemData, type: 'good'})} /> Bueno
-                                                    </label>
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-black p-3 rounded-lg border border-zinc-700 flex-1 text-red-400">
-                                                        <input type="radio" name="type" value="bad" checked={newItemData.type === 'bad'} onChange={() => setNewItemData({...newItemData, type: 'bad'})} /> Malo
-                                                    </label>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                    <div className="flex justify-end gap-3 pt-2">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-white">Cancelar</button>
-                                        <button type="submit" className="bg-indigo-600 px-4 py-2 rounded-lg text-white font-medium hover:bg-indigo-500">Guardar</button>
+                        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 modal-overlay animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 w-full max-w-lg p-6 rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                                <h3 className="text-xl font-bold mb-6 text-zinc-900 dark:text-white flex items-center gap-2">
+                                    {editingId ? <Icons.Pencil /> : <Icons.Plus />} {editingId ? 'Editar Tarea' : 'Nueva Tarea'}
+                                </h3>
+                                <form onSubmit={handleSaveTask} className="space-y-5">
+                                    <div>
+                                        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Actividad</label>
+                                        <input autoFocus required className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.name} onChange={e => setNewTask({...newTask, name: e.target.value})} placeholder="Ej: Diseño..." />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="md:col-span-2">
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Descripción Detallada</label>
+                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all h-20 resize-none text-sm" value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="..." />
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Entregable Final</label>
+                                            <input className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.deliverable} onChange={e => setNewTask({...newTask, deliverable: e.target.value})} placeholder="Informe..." />
+                                        </div>
+                                        <div className="md:col-span-1">
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Observaciones</label>
+                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all h-12 resize-none text-sm" value={newTask.observations} onChange={e => setNewTask({...newTask, observations: e.target.value})} placeholder="..." />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Inicio (Opcional)</label>
+                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.start} onChange={e => setNewTask({...newTask, start: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Fin (Opcional)</label>
+                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.end} onChange={e => setNewTask({...newTask, end: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="flex justify-between mb-1.5">
+                                            <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Progreso Inicial</label>
+                                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{newTask.progress}%</span>
+                                        </div>
+                                        <input type="range" min="0" max="100" className="w-full accent-indigo-600 dark:accent-indigo-500 h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer" value={newTask.progress} onChange={e => setNewTask({...newTask, progress: parseInt(e.target.value)})} />
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-6">
+                                        <button type="button" onClick={() => setIsModalOpen(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-4 py-2 text-sm font-medium transition-colors">Cancelar</button>
+                                        <button type="submit" className="bg-indigo-600 px-6 py-2 rounded-lg text-white text-sm font-medium hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95">Guardar Tarea</button>
                                     </div>
                                 </form>
                             </div>
@@ -412,7 +565,7 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<LifeArchitect />);
+        root.render(<App />);
     </script>
 </body>
 </html>
