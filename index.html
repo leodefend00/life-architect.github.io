@@ -11,6 +11,11 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Firebase SDKs (Compatibilidad con CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <!-- Configuración Tailwind (Dark Mode Class Strategy) -->
     <script>
         tailwind.config = {
@@ -68,6 +73,42 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        // --- CONFIGURACIÓN FIREBASE (Pon tus datos aquí para uso LOCAL) ---
+        // Si estás en el entorno de vista previa, esto se carga automáticamente.
+        // Si descargas el archivo, REEMPLAZA este objeto con tu config de Firebase Console.
+        const MANUAL_FIREBASE_CONFIG = {
+            apiKey: "",
+            authDomain: "",
+            projectId: "",
+            storageBucket: "",
+            messagingSenderId: "",
+            appId: ""
+        };
+
+        // Inicialización segura de Firebase
+        let db = null;
+        let auth = null;
+        let isFirebaseAvailable = false;
+
+        try {
+            // Intenta obtener config del entorno o usa la manual
+            const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(MANUAL_FIREBASE_CONFIG);
+            const config = JSON.parse(configStr);
+            
+            if (config.apiKey) {
+                firebase.initializeApp(config);
+                db = firebase.firestore();
+                auth = firebase.auth();
+                isFirebaseAvailable = true;
+                // Login anónimo automático para lectura/escritura
+                auth.onAuthStateChanged(user => {
+                    if (!user) auth.signInAnonymously().catch(console.error);
+                });
+            }
+        } catch (e) {
+            console.log("Modo Offline: Firebase no configurado.", e);
+        }
+
         const Icons = {
             Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
             Calendar: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>,
@@ -91,7 +132,8 @@
             Moon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>,
             Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>,
             Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
-            Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>,
+            Cloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -386,15 +428,43 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const fileInputRef = useRef(null);
 
+            // Cloud Sync State
+            const [isCloudEnabled, setIsCloudEnabled] = useState(isFirebaseAvailable);
+            const [roomCode, setRoomCode] = useState('');
+
+            // --- SINCRONIZACIÓN FIREBASE ---
+            useEffect(() => {
+                if (isCloudEnabled && db && roomCode) {
+                    // Si la nube está activa, escuchamos los cambios en Firestore
+                    // en lugar de usar localStorage
+                    const unsubProjects = db.collection('chronotrack_projects').doc(roomCode)
+                        .onSnapshot(doc => {
+                            if (doc.exists && doc.data().list) {
+                                setProjects(doc.data().list);
+                            }
+                        });
+                    
+                    const unsubTasks = db.collection('chronotrack_tasks').doc(roomCode)
+                        .onSnapshot(doc => {
+                            if (doc.exists && doc.data().list) {
+                                setTasks(doc.data().list);
+                            }
+                        });
+
+                    return () => { unsubProjects(); unsubTasks(); };
+                } else {
+                    // Fallback a localStorage si no hay nube
+                    localStorage.setItem('chronotrack_projects', JSON.stringify(projects));
+                    localStorage.setItem('chronotrack_tasks', JSON.stringify(tasks));
+                }
+            }, [projects, tasks, isCloudEnabled, roomCode]);
+
             useEffect(() => {
                 const root = window.document.documentElement;
                 if (theme === 'dark') root.classList.add('dark');
                 else root.classList.remove('dark');
                 localStorage.setItem('chronotrack_theme', theme);
             }, [theme]);
-
-            useEffect(() => localStorage.setItem('chronotrack_projects', JSON.stringify(projects)), [projects]);
-            useEffect(() => localStorage.setItem('chronotrack_tasks', JSON.stringify(tasks)), [tasks]);
 
             const activeProjectId = (currentView === 'dashboard' || currentView === 'reports') ? null : currentView;
             const activeTasks = useMemo(() => {
@@ -411,12 +481,58 @@
             const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
             const handlePrint = () => window.print();
 
-            const handleAddProject = () => { const n = prompt("Nombre:"); if(n) { const id=generateId(); setProjects([...projects, {id, name:n, createdAt:new Date().toISOString()}]); setCurrentView(id); setIsSidebarOpen(false); } };
-            const handleDeleteProject = () => { if(confirm("¿Borrar?")) { setProjects(projects.filter(p=>p.id!==activeProjectId)); setTasks(tasks.filter(t=>t.projectId!==activeProjectId)); setCurrentView('dashboard'); } };
-            const handleSaveTask = (e) => { e.preventDefault(); if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); if(editingId) setTasks(tasks.map(t=>t.id===editingId?{...t,...newTask}:t)); else setTasks([...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]); setIsModalOpen(false); setEditingId(null); setNewTask({name:'', description:'', deliverable:'', observations:'', start:'', end:'', status:'Pendiente', progress:0}); };
+            // Modificados para soportar Cloud Sync
+            const updateData = (newProjects, newTasks) => {
+                setProjects(newProjects);
+                setTasks(newTasks);
+                if (isCloudEnabled && db && roomCode) {
+                    db.collection('chronotrack_projects').doc(roomCode).set({ list: newProjects });
+                    db.collection('chronotrack_tasks').doc(roomCode).set({ list: newTasks });
+                }
+            };
+
+            const handleAddProject = () => { 
+                const n = prompt("Nombre:"); 
+                if(n) { 
+                    const id=generateId(); 
+                    const newProjects = [...projects, {id, name:n, createdAt:new Date().toISOString()}];
+                    updateData(newProjects, tasks);
+                    setCurrentView(id); setIsSidebarOpen(false); 
+                } 
+            };
+            
+            const handleDeleteProject = () => { 
+                if(confirm("¿Borrar?")) { 
+                    const newProjects = projects.filter(p=>p.id!==activeProjectId);
+                    const newTasks = tasks.filter(t=>t.projectId!==activeProjectId);
+                    updateData(newProjects, newTasks);
+                    setCurrentView('dashboard'); 
+                } 
+            };
+            
+            const handleSaveTask = (e) => { 
+                e.preventDefault(); 
+                if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); 
+                
+                let updatedTasks;
+                if(editingId) updatedTasks = tasks.map(t=>t.id===editingId?{...t,...newTask}:t); 
+                else updatedTasks = [...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]; 
+                
+                updateData(projects, updatedTasks);
+                setIsModalOpen(false); setEditingId(null); setNewTask({name:'', description:'', deliverable:'', observations:'', start:'', end:'', status:'Pendiente', progress:0}); 
+            };
+            
             const handleEditTask = (t) => { setNewTask({...t}); setEditingId(t.id); setIsModalOpen(true); };
-            const handleDeleteTask = (id) => setTasks(tasks.filter(t=>t.id!==id));
-            const updateTaskStatus = (id, s) => setTasks(tasks.map(t=>t.id===id?{...t, status:s, progress: s==='Completado'?100:t.progress}:t));
+            
+            const handleDeleteTask = (id) => {
+                const updatedTasks = tasks.filter(t=>t.id!==id);
+                updateData(projects, updatedTasks);
+            };
+            
+            const updateTaskStatus = (id, s) => {
+                const updatedTasks = tasks.map(t=>t.id===id?{...t, status:s, progress: s==='Completado'?100:t.progress}:t);
+                updateData(projects, updatedTasks);
+            };
 
             const handleExport = () => {
                 const data = { projects, tasks };
@@ -436,9 +552,8 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         if (data.projects && data.tasks) {
-                            if(confirm("Esto reemplazará tus datos actuales. ¿Continuar?")) {
-                                setProjects(data.projects);
-                                setTasks(data.tasks);
+                            if(confirm(isCloudEnabled ? "IMPORTAR A LA NUBE: Esto reemplazará los datos de TODOS los usuarios en esta sala. ¿Continuar?" : "Esto reemplazará tus datos locales. ¿Continuar?")) {
+                                updateData(data.projects, data.tasks); // Esto dispara la subida a Firebase si está activo
                                 alert("Importación exitosa");
                                 setIsSidebarOpen(false);
                             }
@@ -451,6 +566,27 @@
                 };
                 reader.readAsText(file);
                 if (fileInputRef.current) fileInputRef.current.value = "";
+            };
+
+            const toggleCloudMode = () => {
+                if (!isFirebaseAvailable) {
+                    alert("Firebase no está configurado. Edita el archivo HTML y añade tu configuración en MANUAL_FIREBASE_CONFIG.");
+                    return;
+                }
+                const code = prompt("Ingresa un CÓDIGO DE SALA (ej: empresa-123) para sincronizar:", roomCode);
+                if (code) {
+                    setRoomCode(code);
+                    setIsCloudEnabled(true);
+                    alert(`Conectado a sala: ${code}. Ahora los cambios se guardan en la nube.`);
+                } else {
+                    setIsCloudEnabled(false);
+                    setRoomCode('');
+                    // Recargar datos locales
+                    const savedP = localStorage.getItem('chronotrack_projects');
+                    const savedT = localStorage.getItem('chronotrack_tasks');
+                    if (savedP) setProjects(JSON.parse(savedP));
+                    if (savedT) setTasks(JSON.parse(savedT));
+                }
             };
 
             const SidebarItem = ({ label, icon: Icon, active, onClick, badge }) => (
@@ -491,6 +627,9 @@
                             </div>
                             <div className="space-y-1">
                                 <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Gestión de Datos</p>
+                                <button onClick={toggleCloudMode} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isCloudEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'}`}>
+                                    <div className="flex items-center gap-3"><Icons.Cloud className="w-5 h-5" /><span>{isCloudEnabled ? `Nube: ${roomCode}` : 'Modo Offline'}</span></div>
+                                </button>
                                 <button onClick={handleExport} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200">
                                     <div className="flex items-center gap-3"><Icons.Download className="w-5 h-5 text-zinc-400 dark:text-zinc-500" /><span>Exportar</span></div>
                                 </button>
