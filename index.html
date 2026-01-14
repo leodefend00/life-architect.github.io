@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChronoTrack - Gestión de Cronogramas</title>
+    <title>Cronograpp - Gestión de Cronogramas</title>
     
     <!-- Librerías Core -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -44,7 +44,7 @@
         @media print {
             @page { size: landscape; margin: 0.5cm; }
             body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; }
-            .no-print, aside, button, .modal-overlay, .user-profile, select, .mobile-menu-btn { display: none !important; }
+            .no-print, aside, button, .modal-overlay, .user-profile, select, .mobile-menu-btn, .cloud-status-banner { display: none !important; }
             .print-view-container { display: block !important; height: auto !important; overflow: visible !important; margin-bottom: 2cm !important; page-break-inside: avoid; }
             .print-hidden { display: none !important; }
             .bg-zinc-950, .bg-zinc-900, .bg-black, .dark .bg-zinc-950, .dark .bg-zinc-900, .dark .bg-black { background-color: white !important; border-color: #ddd !important; }
@@ -71,33 +71,35 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- TU CONFIGURACIÓN DE FIREBASE ---
-        const MANUAL_FIREBASE_CONFIG = {
+        // --- ID DE PROYECTO GLOBAL ---
+        const GLOBAL_ROOM_ID = "proyecto-maestro-v1";
+
+        // --- CONFIGURACIÓN (Tus datos) ---
+        const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAUiRqoUjkVQdfpN2IVGUAHjd8SIWi8J6Q",
             authDomain: "cronogramastack.firebaseapp.com",
             projectId: "cronogramastack",
             storageBucket: "cronogramastack.firebasestorage.app",
             messagingSenderId: "1077254109806",
-            appId: "1:1077254109806:web:ca59b3a41aa22aacb2447f" 
+            appId: "1:1077254109806:web:ca59b3a41aa22aacb2447f"
         };
 
+        // --- INICIALIZACIÓN SEGURA ---
         let db = null;
         let auth = null;
-        let isFirebaseAvailable = false;
+        let firebaseReady = false;
 
         try {
-            if (MANUAL_FIREBASE_CONFIG.apiKey) {
+            if (typeof firebase !== 'undefined') {
                 if (!firebase.apps.length) {
-                    firebase.initializeApp(MANUAL_FIREBASE_CONFIG);
+                    firebase.initializeApp(FIREBASE_CONFIG);
                 }
                 db = firebase.firestore();
                 auth = firebase.auth();
-                isFirebaseAvailable = true;
-                // No forzamos el login aquí para evitar errores en consola antes de que React cargue
-                // Lo manejaremos dentro del componente App
+                firebaseReady = true;
             }
         } catch (e) {
-            console.log("Error iniciando Firebase.", e);
+            console.error("Error inicializando Firebase:", e);
         }
 
         const Icons = {
@@ -125,7 +127,8 @@
             Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
             Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>,
             Cloud: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>,
-            Link: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            Link: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>,
+            Warning: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -400,17 +403,60 @@
             );
         };
 
+        // --- COMPONENTE DE DIAGNÓSTICO ---
+        const DiagnosticBanner = ({ error, onRetry, onForceOffline }) => {
+            if (!error) return null;
+            
+            let message = "Error de conexión desconocido.";
+            let action = "Reintentar";
+            let link = "https://console.firebase.google.com/";
+            
+            if (error.code === 'permission-denied') {
+                message = "IMPORTANTE: Base de datos no activa. Ve a la consola -> Firestore Database -> Crear base de datos -> Modo de prueba.";
+                action = "Activar Base de Datos";
+                link = "https://console.firebase.google.com/project/cronogramastack/firestore";
+            } else if (error.code === 'not-found') {
+                message = "CRÍTICO: La base de datos no existe. Ve a Firebase Console -> Firestore Database -> Crear base de datos.";
+                action = "Crear Base de Datos";
+                link = "https://console.firebase.google.com/project/cronogramastack/firestore";
+            } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed') {
+                message = "IMPORTANTE: Acceso 'Anónimo' desactivado. Ve a la consola -> Authentication -> Sign-in method -> Activar Anónimo.";
+                action = "Activar Acceso";
+                link = "https://console.firebase.google.com/project/cronogramastack/authentication/providers";
+            } else if (error.code === 'unavailable') {
+                message = "Sin conexión a internet. Trabajando en modo local.";
+            }
+
+            return (
+                <div className="fixed bottom-0 left-0 right-0 bg-red-900/95 border-t border-red-700 p-4 shadow-2xl z-50 animate-in slide-in-from-bottom-4 flex flex-col md:flex-row justify-between items-center text-white backdrop-blur-md gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/10 p-2 rounded-full flex-shrink-0"><Icons.Alert /></div>
+                        <div>
+                            <h4 className="font-bold text-sm">Sincronización Pausada (Requiere Acción)</h4>
+                            <p className="text-xs opacity-90 max-w-2xl">{message}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-3 flex-wrap justify-center">
+                        <a href={link} target="_blank" className="bg-white text-red-900 font-bold text-xs px-4 py-2 rounded hover:bg-gray-100 transition-colors flex items-center gap-2 whitespace-nowrap shadow-lg">
+                             {action} <Icons.ChevronRight />
+                        </a>
+                        <button onClick={onForceOffline} className="text-white border border-white/30 hover:bg-white/10 text-xs px-4 py-2 rounded transition-colors whitespace-nowrap">
+                            Usar en Modo Offline
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         // --- COMPONENTE PRINCIPAL ---
         function App() {
             const [theme, setTheme] = useState(() => localStorage.getItem('chronotrack_theme') || 'dark');
-            const [projects, setProjects] = useState(() => {
-                const saved = localStorage.getItem('chronotrack_projects');
-                return saved ? JSON.parse(saved) : [{ id: '1', name: 'Proyecto Demo', createdAt: new Date().toISOString() }];
-            });
-            const [tasks, setTasks] = useState(() => {
-                const saved = localStorage.getItem('chronotrack_tasks');
-                return saved ? JSON.parse(saved) : [];
-            });
+            const [projects, setProjects] = useState([]);
+            const [tasks, setTasks] = useState([]);
+
+            const [cloudError, setCloudError] = useState(null);
+            const [isCloudActive, setIsCloudActive] = useState(false);
+            const [isOfflineForced, setIsOfflineForced] = useState(false);
 
             const [currentView, setCurrentView] = useState('dashboard');
             const [isModalOpen, setIsModalOpen] = useState(false);
@@ -420,67 +466,92 @@
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const fileInputRef = useRef(null);
 
-            // Cloud Sync State
-            const [isCloudEnabled, setIsCloudEnabled] = useState(isFirebaseAvailable);
-            const [roomCode, setRoomCode] = useState('');
-
-            // Check URL for room code and sync on mount
             useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                const roomFromUrl = params.get('room');
-                
-                if (roomFromUrl && isFirebaseAvailable) {
-                    setRoomCode(roomFromUrl);
-                    setIsCloudEnabled(true);
-                }
-            }, []);
+                let unsubProjects = () => {};
+                let unsubTasks = () => {};
+                let authUnsub = () => {};
 
-            // --- SINCRONIZACIÓN FIREBASE (Con autenticación) ---
-            useEffect(() => {
-                if (isCloudEnabled && isFirebaseAvailable && roomCode) {
-                    let unsubProjects = () => {};
-                    let unsubTasks = () => {};
+                const initApp = async () => {
+                    if (isOfflineForced) return;
 
-                    // Asegurarse de que estamos autenticados antes de escuchar
-                    const authUnsub = auth.onAuthStateChanged(user => {
-                        if (user) {
-                            unsubProjects = db.collection('chronotrack_projects').doc(roomCode)
-                                .onSnapshot(doc => {
-                                    if (doc.exists && doc.data().list) {
-                                        setProjects(doc.data().list);
+                    if (firebaseReady && db && auth) {
+                        try {
+                            authUnsub = auth.onAuthStateChanged(async (user) => {
+                                if (!user) {
+                                    try {
+                                        await auth.signInAnonymously();
+                                    } catch (err) {
+                                        console.warn("Auth Failed, falling back to local:", err);
+                                        setCloudError(err);
+                                        loadLocalData();
+                                        return;
                                     }
-                                });
-                            
-                            unsubTasks = db.collection('chronotrack_tasks').doc(roomCode)
-                                .onSnapshot(doc => {
-                                    if (doc.exists && doc.data().list) {
-                                        setTasks(doc.data().list);
-                                    }
-                                });
-                        } else {
-                            auth.signInAnonymously().catch(err => {
-                                console.error("Error Auth:", err);
-                                if (err.code === 'auth/configuration-not-found' || err.code === 'auth/operation-not-allowed') {
-                                    alert("Para usar la nube, habilita 'Anónimo' en la consola de Firebase.");
+                                }
+                                
+                                try {
+                                    unsubProjects = db.collection('chronotrack_projects').doc(GLOBAL_ROOM_ID)
+                                        .onSnapshot({
+                                            next: (doc) => {
+                                                if (doc.exists && doc.data().list) {
+                                                    setProjects(doc.data().list);
+                                                } else if (!doc.exists) {
+                                                    db.collection('chronotrack_projects').doc(GLOBAL_ROOM_ID).set({ list: [{ id: '1', name: 'Proyecto Demo', createdAt: new Date().toISOString() }] });
+                                                }
+                                                setIsCloudActive(true);
+                                                setCloudError(null);
+                                            },
+                                            error: (err) => {
+                                                console.warn("Firestore Error:", err);
+                                                setCloudError(err);
+                                                setIsCloudActive(false);
+                                                loadLocalData();
+                                            }
+                                        });
+
+                                    unsubTasks = db.collection('chronotrack_tasks').doc(GLOBAL_ROOM_ID)
+                                        .onSnapshot({
+                                            next: (doc) => {
+                                                if (doc.exists && doc.data().list) {
+                                                    setTasks(doc.data().list);
+                                                }
+                                            },
+                                            error: (err) => {}
+                                        });
+                                } catch (err) {
+                                    console.warn("DB Connection Error:", err);
+                                    setCloudError(err);
+                                    loadLocalData();
                                 }
                             });
+                        } catch (err) {
+                             console.warn("General Error:", err);
+                             setCloudError(err);
+                             loadLocalData();
                         }
-                    });
+                    } else {
+                        loadLocalData();
+                    }
+                };
 
-                    return () => { authUnsub(); unsubProjects(); unsubTasks(); };
-                } else if (!isCloudEnabled) {
-                    localStorage.setItem('chronotrack_projects', JSON.stringify(projects));
-                    localStorage.setItem('chronotrack_tasks', JSON.stringify(tasks));
-                }
-            }, [isCloudEnabled, roomCode]); // Removed projects/tasks dependencies to avoid loops with Firestore
+                initApp();
 
-            // Separate effect for local storage persistence when NOT in cloud mode
+                return () => { unsubProjects(); unsubTasks(); authUnsub(); };
+            }, [isOfflineForced]);
+
+            const loadLocalData = () => {
+                const savedP = localStorage.getItem('chronotrack_projects');
+                const savedT = localStorage.getItem('chronotrack_tasks');
+                if (savedP) setProjects(JSON.parse(savedP));
+                else setProjects([{ id: '1', name: 'Proyecto Demo', createdAt: new Date().toISOString() }]);
+                if (savedT) setTasks(JSON.parse(savedT));
+            };
+
             useEffect(() => {
-                if (!isCloudEnabled) {
+                if (!isCloudActive || isOfflineForced) {
                     localStorage.setItem('chronotrack_projects', JSON.stringify(projects));
                     localStorage.setItem('chronotrack_tasks', JSON.stringify(tasks));
                 }
-            }, [projects, tasks, isCloudEnabled]);
+            }, [projects, tasks, isCloudActive, isOfflineForced]);
 
             useEffect(() => {
                 const root = window.document.documentElement;
@@ -504,14 +575,12 @@
             const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
             const handlePrint = () => window.print();
 
-            // Función centralizada para actualizar datos (local o nube)
             const updateData = (newProjects, newTasks) => {
                 setProjects(newProjects);
                 setTasks(newTasks);
-                
-                if (isCloudEnabled && db && roomCode && auth.currentUser) {
-                    db.collection('chronotrack_projects').doc(roomCode).set({ list: newProjects });
-                    db.collection('chronotrack_tasks').doc(roomCode).set({ list: newTasks });
+                if (!isOfflineForced && isCloudActive && !cloudError && db && auth.currentUser) {
+                    db.collection('chronotrack_projects').doc(GLOBAL_ROOM_ID).set({ list: newProjects }).catch(err => console.warn("Save failed:", err));
+                    db.collection('chronotrack_tasks').doc(GLOBAL_ROOM_ID).set({ list: newTasks }).catch(err => console.warn("Save failed:", err));
                 }
             };
 
@@ -537,11 +606,9 @@
             const handleSaveTask = (e) => { 
                 e.preventDefault(); 
                 if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); 
-                
                 let updatedTasks;
                 if(editingId) updatedTasks = tasks.map(t=>t.id===editingId?{...t,...newTask}:t); 
                 else updatedTasks = [...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]; 
-                
                 updateData(projects, updatedTasks);
                 setIsModalOpen(false); setEditingId(null); setNewTask({name:'', description:'', deliverable:'', observations:'', start:'', end:'', status:'Pendiente', progress:0}); 
             };
@@ -576,9 +643,9 @@
                     try {
                         const data = JSON.parse(e.target.result);
                         if (data.projects && data.tasks) {
-                            if(confirm(isCloudEnabled ? "IMPORTAR A LA NUBE: Esto reemplazará los datos de TODOS los usuarios en esta sala. ¿Continuar?" : "Esto reemplazará tus datos locales. ¿Continuar?")) {
+                            if(confirm(isCloudActive ? "IMPORTAR A NUBE GLOBAL: Esto cambiará los datos para TODOS. ¿Seguro?" : "IMPORTAR LOCAL: Reemplazará tus datos locales.")) {
                                 updateData(data.projects, data.tasks); 
-                                alert("Importación exitosa");
+                                alert("Importación exitosa.");
                                 setIsSidebarOpen(false);
                             }
                         } else {
@@ -592,49 +659,6 @@
                 if (fileInputRef.current) fileInputRef.current.value = "";
             };
 
-            const toggleCloudMode = () => {
-                if (!isFirebaseAvailable) {
-                    alert("Firebase no está configurado. Edita el archivo HTML y añade tu configuración en MANUAL_FIREBASE_CONFIG.");
-                    return;
-                }
-                const code = prompt("Ingresa un CÓDIGO DE SALA (ej: empresa-123) para sincronizar:", roomCode);
-                if (code) {
-                    setRoomCode(code);
-                    setIsCloudEnabled(true);
-                    
-                    const newUrl = new URL(window.location);
-                    newUrl.searchParams.set('room', code);
-                    window.history.pushState({}, '', newUrl);
-                    
-                    // Intentar login explícito al cambiar a modo nube
-                    if (!auth.currentUser) {
-                        auth.signInAnonymously().catch(err => console.error(err));
-                    }
-                    
-                    alert(`Conectado a sala: ${code}. Ahora los cambios se guardan en la nube.`);
-                } else {
-                    setIsCloudEnabled(false);
-                    setRoomCode('');
-                    const newUrl = new URL(window.location);
-                    newUrl.searchParams.delete('room');
-                    window.history.pushState({}, '', newUrl);
-                    
-                    const savedP = localStorage.getItem('chronotrack_projects');
-                    const savedT = localStorage.getItem('chronotrack_tasks');
-                    if (savedP) setProjects(JSON.parse(savedP));
-                    if (savedT) setTasks(JSON.parse(savedT));
-                }
-            };
-
-            const copyShareLink = () => {
-                if (roomCode) {
-                    const url = window.location.href;
-                    navigator.clipboard.writeText(url).then(() => alert("Enlace copiado al portapapeles"));
-                } else {
-                    alert("Primero debes conectarte a una sala.");
-                }
-            };
-
             const SidebarItem = ({ label, icon: Icon, active, onClick, badge }) => (
                 <button onClick={onClick} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${active ? 'bg-indigo-50 dark:bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent'}`}>
                     <div className="flex items-center gap-3"><Icon className={`w-5 h-5 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-300'}`} /><span>{label}</span></div>
@@ -644,6 +668,17 @@
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans bg-zinc-50 dark:bg-black transition-colors duration-300">
+                    <DiagnosticBanner 
+                        error={!isOfflineForced ? cloudError : null} 
+                        onRetry={() => setCloudError(null)}
+                        onForceOffline={() => {
+                            setIsOfflineForced(true);
+                            setCloudError(null);
+                            setIsCloudActive(false);
+                            loadLocalData();
+                        }}
+                    />
+                    
                     {/* MOBILE OVERLAY */}
                     {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
 
@@ -652,7 +687,7 @@
                         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
-                                <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">ChronoTrack</h1>
+                                <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">Cronograpp</h1>
                             </div>
                             <button className="md:hidden text-zinc-500" onClick={() => setIsSidebarOpen(false)}>✕</button>
                         </div>
@@ -673,14 +708,10 @@
                             </div>
                             <div className="space-y-1">
                                 <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Gestión de Datos</p>
-                                <button onClick={toggleCloudMode} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${isCloudEnabled ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900'}`}>
-                                    <div className="flex items-center gap-3"><Icons.Cloud className="w-5 h-5" /><span>{isCloudEnabled ? `Nube: ${roomCode}` : 'Modo Offline'}</span></div>
-                                </button>
-                                {isCloudEnabled && (
-                                    <button onClick={copyShareLink} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900">
-                                        <div className="flex items-center gap-3"><Icons.Link className="w-5 h-5" /><span>Copiar Enlace</span></div>
-                                    </button>
-                                )}
+                                <div className={`px-3 py-2 text-xs rounded-lg flex items-center gap-2 mb-2 ${isCloudActive ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-orange-600 dark:text-orange-400 bg-orange-500/10'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${isCloudActive ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`}></span>
+                                    {isCloudActive ? 'Nube Global Activa' : (isOfflineForced ? 'Modo Offline (Manual)' : 'Modo Offline (Error)')}
+                                </div>
                                 <button onClick={handleExport} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200">
                                     <div className="flex items-center gap-3"><Icons.Download className="w-5 h-5 text-zinc-400 dark:text-zinc-500" /><span>Exportar</span></div>
                                 </button>
