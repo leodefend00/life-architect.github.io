@@ -41,7 +41,7 @@
         @media print {
             @page { size: landscape; margin: 0.5cm; }
             body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; }
-            .no-print, aside, button, .modal-overlay, .user-profile, select { display: none !important; }
+            .no-print, aside, button, .modal-overlay, .user-profile, select, .mobile-menu-btn { display: none !important; }
             .print-view-container { display: block !important; height: auto !important; overflow: visible !important; margin-bottom: 2cm !important; page-break-inside: avoid; }
             .print-hidden { display: none !important; }
             .bg-zinc-950, .bg-zinc-900, .bg-black, .dark .bg-zinc-950, .dark .bg-zinc-900, .dark .bg-black { background-color: white !important; border-color: #ddd !important; }
@@ -66,7 +66,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect, useMemo, useRef } = React;
 
         const Icons = {
             Plus: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>,
@@ -88,10 +88,14 @@
             Flag: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 21v-8a2 2 0 012-2h14a2 2 0 012 2v8M3 21h18M5 10a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8z"/></svg>,
             Eye: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>,
             Sun: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>,
-            Moon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            Moon: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>,
+            Menu: () => <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>,
+            Download: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>,
+            Upload: () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
+        const formatDate = (date) => date.toISOString().split('T')[0];
         const getDaysDiff = (start, end) => Math.round(Math.abs((new Date(end) - new Date(start)) / (24 * 60 * 60 * 1000)));
 
         const GanttChart = ({ tasks, onDelete, onEdit }) => {
@@ -172,9 +176,9 @@
 
         const TaskListView = ({ tasks, onDelete, onEdit, onStatusChange }) => {
             return (
-                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dark:shadow-xl flex flex-col print-container animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dark:shadow-xl flex flex-col print-container animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-x-auto">
                     <div className="print-title text-zinc-900">Detalle de Actividades</div>
-                    <div className="grid grid-cols-12 gap-4 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-bold text-zinc-500 dark:text-zinc-400 text-sm print-header uppercase tracking-wider">
+                    <div className="min-w-[800px] grid grid-cols-12 gap-4 p-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 font-bold text-zinc-500 dark:text-zinc-400 text-sm print-header uppercase tracking-wider">
                         <div className="col-span-1">#</div>
                         <div className="col-span-2">Actividad</div>
                         <div className="col-span-2">Descripción</div>
@@ -184,7 +188,7 @@
                         <div className="col-span-1">Estado</div>
                         <div className="col-span-1 text-right no-print">Acción</div>
                     </div>
-                    <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50">
+                    <div className="divide-y divide-zinc-100 dark:divide-zinc-800/50 min-w-[800px]">
                         {tasks.map((task, index) => (
                             <div key={task.id} className="grid grid-cols-12 gap-4 p-4 items-start hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors text-sm text-zinc-600 dark:text-zinc-300 group">
                                 <div className="col-span-1 font-bold text-zinc-400 dark:text-zinc-500">{index + 1}</div>
@@ -364,10 +368,7 @@
 
         // --- COMPONENTE PRINCIPAL ---
         function App() {
-            // Estado Theme
             const [theme, setTheme] = useState(() => localStorage.getItem('chronotrack_theme') || 'dark');
-            
-            // Estado Datos
             const [projects, setProjects] = useState(() => {
                 const saved = localStorage.getItem('chronotrack_projects');
                 return saved ? JSON.parse(saved) : [{ id: '1', name: 'Proyecto Demo', createdAt: new Date().toISOString() }];
@@ -377,14 +378,14 @@
                 return saved ? JSON.parse(saved) : [];
             });
 
-            // Estado UI
             const [currentView, setCurrentView] = useState('dashboard');
             const [isModalOpen, setIsModalOpen] = useState(false);
             const [newTask, setNewTask] = useState({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 });
             const [editingId, setEditingId] = useState(null);
             const [viewMode, setViewMode] = useState('list'); 
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const fileInputRef = useRef(null);
 
-            // Efectos
             useEffect(() => {
                 const root = window.document.documentElement;
                 if (theme === 'dark') root.classList.add('dark');
@@ -408,18 +409,49 @@
             const activeProject = projects.find(p => p.id === activeProjectId);
 
             const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+            const handlePrint = () => window.print();
 
-            const handlePrint = () => {
-                window.print();
-            };
-
-            // Handlers (Simplificados para brevedad, misma lógica)
-            const handleAddProject = () => { const n = prompt("Nombre:"); if(n) { const id=generateId(); setProjects([...projects, {id, name:n, createdAt:new Date().toISOString()}]); setCurrentView(id); } };
+            const handleAddProject = () => { const n = prompt("Nombre:"); if(n) { const id=generateId(); setProjects([...projects, {id, name:n, createdAt:new Date().toISOString()}]); setCurrentView(id); setIsSidebarOpen(false); } };
             const handleDeleteProject = () => { if(confirm("¿Borrar?")) { setProjects(projects.filter(p=>p.id!==activeProjectId)); setTasks(tasks.filter(t=>t.projectId!==activeProjectId)); setCurrentView('dashboard'); } };
             const handleSaveTask = (e) => { e.preventDefault(); if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); if(editingId) setTasks(tasks.map(t=>t.id===editingId?{...t,...newTask}:t)); else setTasks([...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]); setIsModalOpen(false); setEditingId(null); setNewTask({name:'', description:'', deliverable:'', observations:'', start:'', end:'', status:'Pendiente', progress:0}); };
             const handleEditTask = (t) => { setNewTask({...t}); setEditingId(t.id); setIsModalOpen(true); };
             const handleDeleteTask = (id) => setTasks(tasks.filter(t=>t.id!==id));
             const updateTaskStatus = (id, s) => setTasks(tasks.map(t=>t.id===id?{...t, status:s, progress: s==='Completado'?100:t.progress}:t));
+
+            const handleExport = () => {
+                const data = { projects, tasks };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `chronotrack_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+            };
+
+            const handleImport = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.projects && data.tasks) {
+                            if(confirm("Esto reemplazará tus datos actuales. ¿Continuar?")) {
+                                setProjects(data.projects);
+                                setTasks(data.tasks);
+                                alert("Importación exitosa");
+                                setIsSidebarOpen(false);
+                            }
+                        } else {
+                            alert("Formato de archivo inválido");
+                        }
+                    } catch (err) {
+                        alert("Error al leer el archivo");
+                    }
+                };
+                reader.readAsText(file);
+                if (fileInputRef.current) fileInputRef.current.value = "";
+            };
 
             const SidebarItem = ({ label, icon: Icon, active, onClick, badge }) => (
                 <button onClick={onClick} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${active ? 'bg-indigo-50 dark:bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent'}`}>
@@ -430,26 +462,42 @@
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans bg-zinc-50 dark:bg-black transition-colors duration-300">
+                    {/* MOBILE OVERLAY */}
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
+
                     {/* SIDEBAR */}
-                    <aside className="w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col no-print shadow-sm dark:shadow-xl z-20 transition-colors">
-                        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
-                            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
-                            <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">ChronoTrack</h1>
+                    <aside className={`fixed inset-y-0 left-0 w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col no-print shadow-xl z-30 transition-transform duration-300 transform md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
+                                <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">ChronoTrack</h1>
+                            </div>
+                            <button className="md:hidden text-zinc-500" onClick={() => setIsSidebarOpen(false)}>✕</button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-6">
                             <div className="space-y-1">
                                 <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Menu Principal</p>
-                                <SidebarItem label="Inicio" icon={Icons.Home} active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
+                                <SidebarItem label="Inicio" icon={Icons.Home} active={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setIsSidebarOpen(false);}} />
                                 <SidebarItem label="Calendario Global" icon={Icons.Calendar} onClick={() => alert("Próximamente")} />
-                                <SidebarItem label="Reportes" icon={Icons.Chart} active={currentView === 'reports'} onClick={() => setCurrentView('reports')} />
+                                <SidebarItem label="Reportes" icon={Icons.Chart} active={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setIsSidebarOpen(false);}} />
                             </div>
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between px-3 mb-2">
                                     <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">Espacios de Trabajo</p>
                                     <button onClick={handleAddProject} className="text-zinc-400 hover:text-indigo-500 transition-colors" title="Crear Proyecto"><Icons.Plus /></button>
                                 </div>
-                                {projects.map(p => <SidebarItem key={p.id} label={p.name} icon={Icons.Folder} active={currentView === p.id} onClick={() => setCurrentView(p.id)} badge={tasks.filter(t => t.projectId === p.id && t.status !== 'Completado').length || null} />)}
+                                {projects.map(p => <SidebarItem key={p.id} label={p.name} icon={Icons.Folder} active={currentView === p.id} onClick={() => {setCurrentView(p.id); setIsSidebarOpen(false);}} badge={tasks.filter(t => t.projectId === p.id && t.status !== 'Completado').length || null} />)}
                                 {projects.length === 0 && <p className="px-3 text-xs text-zinc-400 italic">Sin proyectos</p>}
+                            </div>
+                            <div className="space-y-1">
+                                <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Gestión de Datos</p>
+                                <button onClick={handleExport} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                    <div className="flex items-center gap-3"><Icons.Download className="w-5 h-5 text-zinc-400 dark:text-zinc-500" /><span>Exportar</span></div>
+                                </button>
+                                <button onClick={() => fileInputRef.current.click()} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200">
+                                    <div className="flex items-center gap-3"><Icons.Upload className="w-5 h-5 text-zinc-400 dark:text-zinc-500" /><span>Importar</span></div>
+                                </button>
+                                <input type="file" ref={fileInputRef} onChange={handleImport} className="hidden" accept=".json" />
                             </div>
                         </div>
                         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 user-profile">
@@ -466,31 +514,36 @@
 
                     {/* MAIN */}
                     <main className="flex-1 flex flex-col min-w-0 relative bg-zinc-50 dark:bg-black transition-colors">
-                        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-8 bg-white/80 dark:bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 transition-colors">
-                            <div>
-                                <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">{currentView === 'dashboard' ? 'Panel de Control' : (currentView === 'reports' ? 'Centro de Reportes' : activeProject?.name)}</h2>
-                                <p className="text-xs text-zinc-500 no-print">{currentView === 'dashboard' ? `Resumen de ${projects.length} proyectos` : (currentView === 'reports' ? 'Análisis de rendimiento' : `Gestión de proyecto • ${activeTasks.length} tareas`)}</p>
+                        <header className="h-16 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-4 md:px-8 bg-white/80 dark:bg-zinc-950/50 backdrop-blur-md sticky top-0 z-10 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <button className="md:hidden p-2 text-zinc-500 dark:text-zinc-400 mobile-menu-btn" onClick={() => setIsSidebarOpen(true)}>
+                                    <Icons.Menu />
+                                </button>
+                                <div>
+                                    <h2 className="text-lg font-bold text-zinc-900 dark:text-white flex items-center gap-2">{currentView === 'dashboard' ? 'Panel de Control' : (currentView === 'reports' ? 'Centro de Reportes' : activeProject?.name)}</h2>
+                                    <p className="text-xs text-zinc-500 no-print hidden md:block">{currentView === 'dashboard' ? `Resumen de ${projects.length} proyectos` : (currentView === 'reports' ? 'Análisis de rendimiento' : `Gestión de proyecto • ${activeTasks.length} tareas`)}</p>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3 no-print">
+                            <div className="flex items-center gap-2 md:gap-3 no-print">
                                 <button onClick={toggleTheme} className="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors" title={theme==='dark'?'Modo Claro':'Modo Oscuro'}>
                                     {theme === 'dark' ? <Icons.Sun /> : <Icons.Moon />}
                                 </button>
                                 {currentView !== 'dashboard' && currentView !== 'reports' && activeProject && (
                                     <>
-                                        <button onClick={handlePrint} className="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors" title="Imprimir"><Icons.Printer /></button>
-                                        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
+                                        <button onClick={handlePrint} className="p-2 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors hidden md:block" title="Imprimir"><Icons.Printer /></button>
+                                        <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-2 hidden md:block"></div>
                                         <div className="flex bg-zinc-100 dark:bg-zinc-900 rounded-lg p-1 border border-zinc-200 dark:border-zinc-800">
                                             <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Lista</button>
                                             <button onClick={() => setViewMode('gantt')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'gantt' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Cronograma</button>
                                         </div>
-                                        <button onClick={() => { setNewTask({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 }); setEditingId(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-500 flex items-center gap-2 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95"><Icons.Plus /> Nueva Tarea</button>
-                                        <button onClick={handleDeleteProject} className="p-2 text-zinc-400 hover:text-red-500 transition-colors" title="Borrar Proyecto"><Icons.Trash /></button>
+                                        <button onClick={() => { setNewTask({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 }); setEditingId(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-500 flex items-center gap-2 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95"><Icons.Plus /><span className="hidden md:inline">Nueva Tarea</span></button>
+                                        <button onClick={handleDeleteProject} className="p-2 text-zinc-400 hover:text-red-500 transition-colors hidden md:block" title="Borrar Proyecto"><Icons.Trash /></button>
                                     </>
                                 )}
                             </div>
                         </header>
 
-                        <div className="flex-1 overflow-auto bg-zinc-50 dark:bg-black scroll-smooth p-6 transition-colors">
+                        <div className="flex-1 overflow-auto bg-zinc-50 dark:bg-black scroll-smooth p-4 md:p-6 transition-colors">
                             {currentView === 'dashboard' ? (
                                 <Dashboard projects={projects} tasks={tasks} />
                             ) : currentView === 'reports' ? (
