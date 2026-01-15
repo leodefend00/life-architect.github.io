@@ -24,7 +24,7 @@
                 extend: {
                     colors: {
                         zinc: { 850: '#1f1f22', 900: '#18181b', 950: '#09090b' },
-                        primary: { 500: '#6366f1', 600: '#4f46e5' }
+                        primary: { 500: '#3b82f6', 600: '#2563eb' }
                     },
                     screens: { 'print': {'raw': 'print'} }
                 }
@@ -36,39 +36,36 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         .dark ::-webkit-scrollbar-track { background: #09090b; }
         .dark ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
         ::-webkit-scrollbar-track { background: #f4f4f5; }
         ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+        ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
 
         /* --- ESTILOS DE IMPRESIÓN PROFESIONAL --- */
         @media print {
-            @page { size: landscape; margin: 1cm; }
+            @page { size: landscape; margin: 0.5cm; }
             
             body { 
                 background-color: white !important; 
-                color: #111 !important; 
-                font-size: 10pt !important; /* Fuente ligeramente más pequeña para mejor ajuste */
+                color: #000 !important; 
+                font-size: 9pt !important;
                 -webkit-print-color-adjust: exact !important; 
                 print-color-adjust: exact !important;
             }
             
-            /* Ocultar elementos de UI */
             .no-print, aside, button, .modal-overlay, .user-profile, select, .mobile-menu-btn, .cloud-status-banner { 
                 display: none !important; 
             }
             
-            /* Contenedores de impresión */
+            /* Contenedor tipo Tabla */
             .print-view-container { 
                 display: block !important; 
                 height: auto !important; 
                 overflow: visible !important; 
-                margin-bottom: 25px !important; 
+                margin-bottom: 20px !important; 
                 page-break-inside: avoid; 
-                border: 1px solid #e5e7eb !important;
-                border-radius: 0 !important; /* Bordes rectos para seriedad */
+                border: 1px solid #999 !important;
                 background-color: white !important;
-                box-shadow: none !important;
             }
             
             .print-hidden { display: none !important; }
@@ -79,62 +76,60 @@
                 color: black !important;
             }
             
-            .text-zinc-200, .text-zinc-300, .text-zinc-400, .text-zinc-500, .text-white, .dark .text-white, .text-indigo-600, .dark .text-indigo-300 { 
-                color: #222 !important; 
+            .text-zinc-200, .text-zinc-300, .text-zinc-400, .text-zinc-500, .text-white, .dark .text-white { 
+                color: #000 !important; 
             }
             
             .border-zinc-800, .dark .border-zinc-800, .border-zinc-200 { 
-                border-color: #d1d5db !important; 
+                border-color: #999 !important; 
             }
             
             /* Encabezados de tabla */
             .print-header {
-                background-color: #f3f4f6 !important; 
+                background-color: #e5e5e5 !important; 
                 color: #000 !important;
                 font-weight: 800 !important;
                 text-transform: uppercase !important;
                 font-size: 8pt !important;
-                padding: 10px 6px !important;
-                border-bottom: 2px solid #6b7280 !important;
+                padding: 6px 4px !important;
+                border-bottom: 2px solid #000 !important;
+                border-right: 1px solid #999 !important;
+            }
+            
+            /* Celdas con separación */
+            .print-cell {
+                padding: 6px 8px !important;
+                border-right: 1px solid #ccc !important; /* Línea vertical divisoria */
+            }
+            .print-cell:last-child {
+                border-right: none !important;
             }
             
             /* Filas */
-            .divide-y > div {
-                border-bottom: 1px solid #e5e7eb !important;
-                padding: 10px 6px !important;
-            }
-            
-            /* Espaciado extra en celdas para evitar pegado */
-            .print-cell {
-                padding-right: 12px !important;
+            .print-row {
+                border-bottom: 1px solid #ccc !important;
             }
 
-            /* Layout Global */
             main { margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; }
             .h-screen { height: auto !important; overflow: visible !important; }
             .flex-1 { flex: none !important; overflow: visible !important; }
             .overflow-x-auto, .overflow-y-auto { overflow: visible !important; }
             
-            /* Títulos */
             .print-title { 
                 display: block !important; 
                 font-size: 14pt !important; 
                 font-weight: bold; 
-                margin: 0; 
-                padding: 15px;
-                background-color: #fff !important;
+                padding: 10px;
                 border-bottom: 2px solid #000;
-                color: #000 !important;
                 text-align: center;
                 text-transform: uppercase;
-                letter-spacing: 1px;
+                margin-bottom: 0 !important;
             }
             
-            /* Barras de Gantt */
-            .bg-indigo-500 { background-color: #4f46e5 !important; border: 1px solid #312e81 !important; color: white !important; }
-            .bg-emerald-500 { background-color: #10b981 !important; border: 1px solid #065f46 !important; color: white !important; }
-            .bg-red-500 { background-color: #ef4444 !important; border: 1px solid #991b1b !important; color: white !important; }
-            .bg-zinc-500 { background-color: #71717a !important; border: 1px solid #3f3f46 !important; color: white !important; }
+            /* Colores de barras */
+            .bar-base { background-color: #eee !important; border: 1px solid #999 !important; }
+            .bar-fill { background-color: #2563eb !important; } 
+            .bar-late { background-color: #fee2e2 !important; border: 1px solid #991b1b !important; }
             
             .print-only { display: block !important; }
         }
@@ -143,16 +138,14 @@
         .print-title { display: none; }
     </style>
 </head>
-<body class="bg-zinc-50 text-zinc-900 dark:bg-black dark:text-e4e4e7">
+<body class="bg-white text-zinc-900 dark:bg-black dark:text-e4e4e7">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- ID DE PROYECTO GLOBAL ---
         const GLOBAL_ROOM_ID = "proyecto-maestro-v1";
 
-        // --- CONFIGURACIÓN (Tus datos) ---
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAUiRqoUjkVQdfpN2IVGUAHjd8SIWi8J6Q",
             authDomain: "cronogramastack.firebaseapp.com",
@@ -162,7 +155,6 @@
             appId: "1:1077254109806:web:ca59b3a41aa22aacb2447f"
         };
 
-        // --- INICIALIZACIÓN SEGURA ---
         let db = null;
         let auth = null;
         let firebaseReady = false;
@@ -210,14 +202,11 @@
         };
 
         const generateId = () => Math.random().toString(36).substr(2, 9);
-        
-        // --- FORMATO DE FECHA (DD/MM/AA) ---
         const formatDateDisplay = (dateStr) => {
             if(!dateStr) return '--';
             const [y, m, d] = dateStr.split('-');
-            return `${d}/${m}/${y.slice(2)}`;
+            return `${d}/${m}/${y}`; // Año completo
         };
-        
         const getDaysDiff = (start, end) => Math.round(Math.abs((new Date(end) - new Date(start)) / (24 * 60 * 60 * 1000)));
 
         const GanttChart = ({ tasks, onDelete, onEdit }) => {
@@ -240,19 +229,24 @@
 
             const getPosition = (dateStr) => (getDaysDiff(minDate, new Date(dateStr)) / totalDays) * 100;
             const getWidth = (startStr, endStr) => ((getDaysDiff(new Date(startStr), new Date(endStr)) + 1) / totalDays) * 100;
-            const getStatusColor = (status, endStr) => {
+
+            const getBarColors = (status, endStr) => {
                 const today = new Date().toISOString().split('T')[0];
-                if (status === 'Completado') return 'bg-emerald-500';
-                if (endStr < today && status !== 'Completado') return 'bg-red-500';
-                if (status === 'En Progreso') return 'bg-indigo-500';
-                return 'bg-zinc-500';
+                const isLate = status !== 'Completado' && endStr < today;
+                
+                let baseClass = "bg-zinc-200 dark:bg-zinc-800"; 
+                if (isLate) baseClass = "bg-red-200 dark:bg-red-900/30 bar-late";
+                
+                const fillClass = "bg-blue-600 bar-fill";
+
+                return { baseClass, fillClass, isLate };
             };
 
             return (
                 <div className="flex flex-col h-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dark:shadow-xl print-container">
                     <div className="print-title text-zinc-900">Cronograma de Actividades (Gantt)</div>
-                    <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 overflow-x-auto hide-scrollbar">
-                        <div className="w-48 flex-shrink-0 p-3 text-sm font-bold text-zinc-500 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 sticky left-0 bg-zinc-50 dark:bg-zinc-950 z-10 print-header">Tarea</div>
+                    <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-black overflow-x-auto hide-scrollbar">
+                        <div className="w-48 flex-shrink-0 p-3 text-sm font-bold text-zinc-500 dark:text-zinc-400 border-r border-zinc-200 dark:border-zinc-800 sticky left-0 bg-zinc-50 dark:bg-black z-10 print-header">Tarea</div>
                         <div className="flex-1 relative h-10 min-w-[600px]">
                             {timelineDays.map((day, i) => (
                                 <div key={i} className="absolute border-l border-zinc-200 dark:border-zinc-800 h-full flex items-center justify-center text-[10px] text-zinc-500 dark:text-zinc-600" 
@@ -264,8 +258,8 @@
                         {scheduledTasks.map((task, index) => {
                             const left = getPosition(task.start);
                             const width = getWidth(task.start, task.end);
-                            const color = getStatusColor(task.status, task.end);
-                            const isLate = task.status !== 'Completado' && task.end < new Date().toISOString().split('T')[0];
+                            const { baseClass, fillClass, isLate } = getBarColors(task.status, task.end);
+                            
                             return (
                                 <div key={task.id} className="flex border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors group print-row">
                                     <div className="w-48 flex-shrink-0 p-3 border-r border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/80 sticky left-0 z-10 flex justify-between items-center group print-task-label print-cell">
@@ -273,24 +267,24 @@
                                             <span className="text-xs font-mono text-zinc-400">#{index + 1}</span>
                                             <div className="flex-1 min-w-0">
                                                 <div className="text-sm text-zinc-800 dark:text-zinc-200 font-medium truncate" title={task.name}>{task.name}</div>
-                                                <div className="text-xs text-zinc-500 flex items-center gap-1 no-print">{isLate && <Icons.Alert />} {formatDateDisplay(task.start)}</div>
+                                                <div className={`text-xs flex items-center gap-1 no-print ${isLate ? 'text-red-500' : 'text-zinc-500'}`}>{isLate && <Icons.Alert />} {formatDateDisplay(task.start)}</div>
                                             </div>
                                         </div>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                                            <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-indigo-500 dark:text-zinc-600 dark:hover:text-indigo-400"><Icons.Pencil /></button>
+                                            <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-blue-500 dark:text-zinc-600 dark:hover:text-blue-400"><Icons.Pencil /></button>
                                             <button onClick={() => onDelete(task.id)} className="text-zinc-400 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-500"><Icons.Trash /></button>
                                         </div>
                                     </div>
                                     <div className="flex-1 relative h-14 min-w-[600px]">
                                         {timelineDays.map((_, i) => <div key={i} className="absolute border-l border-zinc-100 dark:border-zinc-800/30 h-full" style={{left: `${(i/totalDays)*100}%`}}></div>)}
                                         <div 
-                                            className={`absolute top-3 h-8 rounded-md shadow-sm ${color} bg-opacity-90 flex items-center justify-center px-1 overflow-visible whitespace-nowrap transition-all hover:brightness-110 cursor-pointer print-bar group-task`}
+                                            className={`absolute top-3 h-8 rounded-md shadow-sm ${baseClass} bar-base flex items-center px-1 overflow-visible whitespace-nowrap transition-all hover:brightness-110 cursor-pointer print-bar group-task`}
                                             style={{ left: `${left}%`, width: `${width}%`, minWidth: '35px' }} 
                                             title={`Entregable: ${task.deliverable || 'N/A'}`} 
                                             onClick={() => onEdit(task)}
                                         >
-                                            <div className="absolute left-0 top-0 bottom-0 bg-black/20 rounded-l-md" style={{width: `${task.progress}%`}}></div>
-                                            <span className="text-[10px] font-bold text-white drop-shadow-md z-10 relative">
+                                            <div className={`absolute left-0 top-0 bottom-0 rounded-l-md ${fillClass}`} style={{width: `${task.progress}%`, borderRadius: task.progress === 100 ? '6px' : '6px 0 0 6px'}}></div>
+                                            <span className={`text-[10px] font-bold z-10 relative ml-1 ${task.progress > 50 ? 'text-white' : 'text-zinc-600 dark:text-zinc-300'}`}>
                                                 {task.progress}%
                                             </span>
                                         </div>
@@ -311,7 +305,7 @@
                         <div className="col-span-1">#</div>
                         <div className="col-span-2">Actividad</div>
                         <div className="col-span-2">Descripción</div>
-                        <div className="col-span-2">Entregable</div>
+                        <div className="col-span-1">Entregable</div>
                         <div className="col-span-2">Observaciones</div>
                         <div className="col-span-2">Fechas</div>
                         <div className="col-span-1">Estado</div>
@@ -323,16 +317,16 @@
                                 <div className="col-span-1 font-bold text-zinc-400 dark:text-zinc-500 print-cell">{index + 1}</div>
                                 <div className="col-span-2 font-medium text-zinc-900 dark:text-white break-words print-cell">{task.name}</div>
                                 <div className="col-span-2 text-zinc-500 dark:text-zinc-400 text-xs break-words whitespace-pre-wrap print-cell">{task.description || '-'}</div>
-                                <div className="col-span-2 print-cell">
+                                <div className="col-span-1 print-cell">
                                     {task.deliverable ? (
-                                        <div className="text-xs text-zinc-500 dark:text-zinc-400 break-words flex items-start gap-1">
-                                            <Icons.Box className="w-3 h-3 mt-0.5 flex-shrink-0" /> 
-                                            <span>{task.deliverable}</span>
+                                        // Entregable texto normal, sin etiquetas
+                                        <div className="text-xs text-zinc-600 dark:text-zinc-300 break-words">
+                                            {task.deliverable}
                                         </div>
                                     ) : <span className="text-zinc-400">-</span>}
                                 </div>
                                 <div className="col-span-2 text-zinc-500 dark:text-zinc-400 text-xs break-words whitespace-pre-wrap italic print-cell">
-                                    {task.observations ? <span className="flex gap-1"><Icons.Eye className="w-3 h-3 mt-0.5 flex-shrink-0" /> <span>{task.observations}</span></span> : <span className="text-zinc-400">-</span>}
+                                    {task.observations ? <span>{task.observations}</span> : <span className="text-zinc-400">-</span>}
                                 </div>
                                 <div className="col-span-2 flex flex-col text-xs print-cell">
                                     <span className="text-zinc-500">In: {formatDateDisplay(task.start)}</span>
@@ -340,17 +334,17 @@
                                 </div>
                                 <div className="col-span-1 print-cell">
                                     <select value={task.status} onChange={(e) => onStatusChange(task.id, e.target.value)}
-                                        className={`w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded px-2 py-1 text-xs outline-none focus:border-indigo-500 no-print 
-                                            ${task.status === 'Completado' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : task.status === 'En Progreso' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                        className={`w-full bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded px-2 py-1 text-xs outline-none focus:border-blue-500 no-print 
+                                            ${task.status === 'Completado' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' : task.status === 'En Progreso' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/10' : 'text-zinc-500 dark:text-zinc-400'}`}>
                                         <option value="Pendiente">Pendiente</option>
                                         <option value="En Progreso">En Progreso</option>
                                         <option value="Retrasado">Retrasado</option>
                                         <option value="Completado">Completado</option>
                                     </select>
-                                    <span className="hidden print-only text-black text-xs">{task.status}</span>
+                                    <span className="hidden print-only text-black text-xs font-medium">{task.status}</span>
                                 </div>
                                 <div className="col-span-1 text-right no-print opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-1">
-                                    <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-indigo-500 dark:text-zinc-600 dark:hover:text-indigo-400 transition-colors p-1 rounded"><Icons.Pencil /></button>
+                                    <button onClick={() => onEdit(task)} className="text-zinc-400 hover:text-blue-500 dark:text-zinc-600 dark:hover:text-blue-400 transition-colors p-1 rounded"><Icons.Pencil /></button>
                                     <button onClick={() => onDelete(task.id)} className="text-zinc-400 hover:text-red-500 dark:text-zinc-600 dark:hover:text-red-500 transition-colors p-1 rounded"><Icons.Trash /></button>
                                 </div>
                             </div>
@@ -372,7 +366,7 @@
                     <div>
                         <p className="text-zinc-500 text-sm font-medium mb-1">{title}</p>
                         <h3 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">{value}</h3>
-                        <p className={`text-xs ${sub.includes('+') ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400'}`}>{sub}</p>
+                        <p className={`text-xs ${sub.includes('+') ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400'}`}>{sub}</p>
                     </div>
                     <div className={`p-3 rounded-lg ${color} bg-opacity-10 text-white dark:text-white`}>
                         <Icon />
@@ -387,9 +381,9 @@
                         <p className="text-zinc-500 dark:text-zinc-400">Aquí tienes el resumen de tus operaciones hoy.</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <StatCard title="Proyectos Activos" value={totalProjects} sub="En curso" icon={Icons.Folder} color="bg-indigo-600" />
+                        <StatCard title="Proyectos Activos" value={totalProjects} sub="En curso" icon={Icons.Folder} color="bg-blue-600" />
                         <StatCard title="Tareas Totales" value={totalTasks} sub="Registradas" icon={Icons.Check} color="bg-blue-600" />
-                        <StatCard title="Eficiencia" value={`${completionRate}%`} sub="Tasa de éxito" icon={Icons.Chart} color="bg-emerald-600" />
+                        <StatCard title="Eficiencia" value={`${completionRate}%`} sub="Tasa de éxito" icon={Icons.Chart} color="bg-blue-600" />
                         <StatCard title="Retrasos" value={delayedTasks} sub="Atención requerida" icon={Icons.Alert} color="bg-red-600" />
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -447,8 +441,8 @@
                         </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 print-grid">
-                        <StatusCard label="Completadas" count={byStatus['Completado']} color="bg-emerald-500" />
-                        <StatusCard label="En Progreso" count={byStatus['En Progreso']} color="bg-indigo-500" />
+                        <StatusCard label="Completadas" count={byStatus['Completado']} color="bg-blue-600" />
+                        <StatusCard label="En Progreso" count={byStatus['En Progreso']} color="bg-blue-600" />
                         <StatusCard label="Pendientes" count={byStatus['Pendiente']} color="bg-zinc-500" />
                         <StatusCard label="Retrasadas" count={byStatus['Retrasado']} color="bg-red-500" />
                     </div>
@@ -463,7 +457,7 @@
                                             <span className="text-zinc-500">{p.percent}% ({p.done}/{p.total})</span>
                                         </div>
                                         <div className="h-2.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                            <div className="h-full bg-indigo-600 transition-all duration-1000" style={{width: `${p.percent}%`}}></div>
+                                            <div className="h-full bg-blue-600 transition-all duration-1000" style={{width: `${p.percent}%`}}></div>
                                         </div>
                                     </div>
                                 ))}
@@ -480,7 +474,7 @@
                                                 <div className="text-sm font-medium text-zinc-900 dark:text-white">{t.name}</div>
                                                 <div className="text-xs text-zinc-500 mt-0.5 flex items-center gap-1"><Icons.Box className="w-3 h-3" /> {t.deliverable || 'Sin entregable'}</div>
                                             </div>
-                                            <div className="text-xs font-bold text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded border border-indigo-100 dark:border-indigo-500/20">{formatDateDisplay(t.end)}</div>
+                                            <div className="text-xs font-bold text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-2.5 py-1 rounded border border-blue-100 dark:border-blue-500/20">{formatDateDisplay(t.end)}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -698,7 +692,9 @@
             
             const handleSaveTask = (e) => { 
                 e.preventDefault(); 
-                if(newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio"); 
+                // Validación opcional de fechas
+                if (newTask.start && newTask.end && newTask.end < newTask.start) return alert("La fecha fin no puede ser antes del inicio");
+
                 let updatedTasks;
                 if(editingId) updatedTasks = tasks.map(t=>t.id===editingId?{...t,...newTask}:t); 
                 else updatedTasks = [...tasks, {...newTask, id:generateId(), projectId:activeProjectId}]; 
@@ -753,8 +749,8 @@
             };
 
             const SidebarItem = ({ label, icon: Icon, active, onClick, badge }) => (
-                <button onClick={onClick} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${active ? 'bg-indigo-50 dark:bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent'}`}>
-                    <div className="flex items-center gap-3"><Icon className={`w-5 h-5 ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-300'}`} /><span>{label}</span></div>
+                <button onClick={onClick} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all group ${active ? 'bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200 border border-transparent'}`}>
+                    <div className="flex items-center gap-3"><Icon className={`w-5 h-5 ${active ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-300'}`} /><span>{label}</span></div>
                     {badge && <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] px-1.5 py-0.5 rounded-md">{badge}</span>}
                 </button>
             );
@@ -779,7 +775,7 @@
                     <aside className={`fixed inset-y-0 left-0 w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col no-print shadow-xl z-30 transition-transform duration-300 transform md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30 dark:shadow-indigo-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
+                                <div className="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-500/30 dark:shadow-blue-900/30"><Icons.Clock className="text-white w-5 h-5" /></div>
                                 <h1 className="text-lg font-bold text-zinc-900 dark:text-white tracking-tight">Cronograpp</h1>
                             </div>
                             <button className="md:hidden text-zinc-500" onClick={() => setIsSidebarOpen(false)}>✕</button>
@@ -794,15 +790,15 @@
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between px-3 mb-2">
                                     <p className="text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider">Espacios de Trabajo</p>
-                                    <button onClick={handleAddProject} className="text-zinc-400 hover:text-indigo-500 transition-colors" title="Crear Proyecto"><Icons.Plus /></button>
+                                    <button onClick={handleAddProject} className="text-zinc-400 hover:text-blue-500 transition-colors" title="Crear Proyecto"><Icons.Plus /></button>
                                 </div>
                                 {projects.map(p => <SidebarItem key={p.id} label={p.name} icon={Icons.Folder} active={currentView === p.id} onClick={() => {setCurrentView(p.id); setIsSidebarOpen(false);}} badge={tasks.filter(t => t.projectId === p.id && t.status !== 'Completado').length || null} />)}
                                 {projects.length === 0 && <p className="px-3 text-xs text-zinc-400 italic">Sin proyectos</p>}
                             </div>
                             <div className="space-y-1">
                                 <p className="px-3 text-[11px] font-bold text-zinc-400 dark:text-zinc-600 uppercase tracking-wider mb-2">Gestión de Datos</p>
-                                <div className={`px-3 py-2 text-xs rounded-lg flex items-center gap-2 mb-2 ${isCloudActive ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-orange-600 dark:text-orange-400 bg-orange-500/10'}`}>
-                                    <span className={`w-2 h-2 rounded-full ${isCloudActive ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`}></span>
+                                <div className={`px-3 py-2 text-xs rounded-lg flex items-center gap-2 mb-2 ${isCloudActive ? 'text-blue-600 dark:text-blue-400 bg-blue-500/10' : 'text-orange-600 dark:text-orange-400 bg-orange-500/10'}`}>
+                                    <span className={`w-2 h-2 rounded-full ${isCloudActive ? 'bg-blue-500 animate-pulse' : 'bg-orange-500'}`}></span>
                                     {isCloudActive ? 'Nube Global Activa' : (isOfflineForced ? 'Modo Offline (Manual)' : 'Modo Offline (Error)')}
                                 </div>
                                 <button onClick={handleExport} className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200">
@@ -816,7 +812,7 @@
                         </div>
                         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 user-profile">
                             <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer group">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-md">AD</div>
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center text-white font-bold text-xs shadow-md">AD</div>
                                 <div className="flex-1 overflow-hidden">
                                     <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200 truncate">Admin User</p>
                                     <p className="text-xs text-zinc-400 dark:text-zinc-500 truncate">Pro Plan</p>
@@ -850,7 +846,7 @@
                                             <button onClick={() => setViewMode('list')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'list' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Lista</button>
                                             <button onClick={() => setViewMode('gantt')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'gantt' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Cronograma</button>
                                         </div>
-                                        <button onClick={() => { setNewTask({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 }); setEditingId(null); setIsModalOpen(true); }} className="bg-indigo-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-500 flex items-center gap-2 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95"><Icons.Plus /><span className="hidden md:inline">Nueva Tarea</span></button>
+                                        <button onClick={() => { setNewTask({ name: '', description: '', deliverable: '', observations: '', start: '', end: '', status: 'Pendiente', progress: 0 }); setEditingId(null); setIsModalOpen(true); }} className="bg-blue-600 text-white px-3 md:px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-500 flex items-center gap-2 shadow-lg shadow-blue-500/20 dark:shadow-blue-900/20 transition-all active:scale-95"><Icons.Plus /><span className="hidden md:inline">Nueva Tarea</span></button>
                                         <button onClick={handleDeleteProject} className="p-2 text-zinc-400 hover:text-red-500 transition-colors hidden md:block" title="Borrar Proyecto"><Icons.Trash /></button>
                                     </>
                                 )}
@@ -886,42 +882,42 @@
                                 <form onSubmit={handleSaveTask} className="space-y-5">
                                     <div>
                                         <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Actividad</label>
-                                        <input autoFocus required className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.name} onChange={e => setNewTask({...newTask, name: e.target.value})} placeholder="Ej: Diseño..." />
+                                        <input autoFocus required className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all" value={newTask.name} onChange={e => setNewTask({...newTask, name: e.target.value})} placeholder="Ej: Diseño..." />
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="md:col-span-2">
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Descripción Detallada</label>
-                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all h-20 resize-none text-sm" value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="..." />
+                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all h-20 resize-none text-sm" value={newTask.description} onChange={e => setNewTask({...newTask, description: e.target.value})} placeholder="..." />
                                         </div>
                                         <div className="md:col-span-1">
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Entregable Final</label>
-                                            <input className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.deliverable} onChange={e => setNewTask({...newTask, deliverable: e.target.value})} placeholder="Informe..." />
+                                            <input className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all" value={newTask.deliverable} onChange={e => setNewTask({...newTask, deliverable: e.target.value})} placeholder="Informe..." />
                                         </div>
                                         <div className="md:col-span-1">
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Observaciones</label>
-                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all h-12 resize-none text-sm" value={newTask.observations} onChange={e => setNewTask({...newTask, observations: e.target.value})} placeholder="..." />
+                                            <textarea className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all h-12 resize-none text-sm" value={newTask.observations} onChange={e => setNewTask({...newTask, observations: e.target.value})} placeholder="..." />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Inicio (Opcional)</label>
-                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.start} onChange={e => setNewTask({...newTask, start: e.target.value})} />
+                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all" value={newTask.start} onChange={e => setNewTask({...newTask, start: e.target.value})} />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wide">Fin (Opcional)</label>
-                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-indigo-500 outline-none transition-all" value={newTask.end} onChange={e => setNewTask({...newTask, end: e.target.value})} />
+                                            <input type="date" className="w-full bg-zinc-50 dark:bg-black border border-zinc-200 dark:border-zinc-700 p-3 rounded-lg text-zinc-900 dark:text-white focus:border-blue-500 outline-none transition-all" value={newTask.end} onChange={e => setNewTask({...newTask, end: e.target.value})} />
                                         </div>
                                     </div>
                                     <div>
                                         <div className="flex justify-between mb-1.5">
                                             <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Progreso Inicial</label>
-                                            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{newTask.progress}%</span>
+                                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{newTask.progress}%</span>
                                         </div>
-                                        <input type="range" min="0" max="100" className="w-full accent-indigo-600 dark:accent-indigo-500 h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer" value={newTask.progress} onChange={e => setNewTask({...newTask, progress: parseInt(e.target.value)})} />
+                                        <input type="range" min="0" max="100" className="w-full accent-blue-600 dark:accent-blue-500 h-2 bg-zinc-200 dark:bg-zinc-800 rounded-lg appearance-none cursor-pointer" value={newTask.progress} onChange={e => setNewTask({...newTask, progress: parseInt(e.target.value)})} />
                                     </div>
                                     <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800 mt-6">
                                         <button type="button" onClick={() => setIsModalOpen(false)} className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white px-4 py-2 text-sm font-medium transition-colors">Cancelar</button>
-                                        <button type="submit" className="bg-indigo-600 px-6 py-2 rounded-lg text-white text-sm font-medium hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 dark:shadow-indigo-900/20 transition-all active:scale-95">Guardar Tarea</button>
+                                        <button type="submit" className="bg-blue-600 px-6 py-2 rounded-lg text-white text-sm font-medium hover:bg-blue-500 shadow-lg shadow-blue-500/20 dark:shadow-blue-900/20 transition-all active:scale-95">Guardar Tarea</button>
                                     </div>
                                 </form>
                             </div>
